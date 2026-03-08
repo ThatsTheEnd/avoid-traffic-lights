@@ -4,6 +4,7 @@ import Sidebar, { RouteData } from "@/components/Sidebar";
 import MapView, { MapViewHandle } from "@/components/MapView";
 import LocationButton, { LocationState } from "@/components/LocationButton";
 import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeBoundingBoxes, fetchTrafficSignalsInBoundingBox } from "@/lib/api";
+import type { LoadingStep } from "@/components/LoadingProgress";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, X } from "lucide-react";
@@ -16,6 +17,7 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeRouteIndex, setActiveRouteIndex] = useState<number | null>(null);
   const [trackingActive, setTrackingActive] = useState(false);
+  const [loadingSteps, setLoadingSteps] = useState<LoadingStep[]>([]);
   const [locatingFromSidebar, setLocatingFromSidebar] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -42,18 +44,40 @@ const Index = () => {
       setActiveRouteIndex(null);
       mapRef.current?.clearAll();
 
+      const makeSteps = (active: number, elapsed: number[] = []): LoadingStep[] => {
+        const labels = ["Fetching bike routes…", "Scanning traffic lights…", "Analysing intersections…"];
+        return labels.map((label, i) => ({
+          label,
+          status: i < active ? "done" : i === active ? "active" : "pending",
+          elapsed: elapsed[i],
+        }));
+      };
+
+      setLoadingSteps(makeSteps(0));
+      const t: number[] = [];
+      let stepStart = Date.now();
+
       try {
         const rawRoutes = await fetchRoutes(startLat, startLon, endLat, endLon);
+        t[0] = Date.now() - stepStart;
+        stepStart = Date.now();
+        setLoadingSteps(makeSteps(1, t));
+
         const mergedBbox = mergeBoundingBoxes(
           rawRoutes.map((route) => getRouteBoundingBox(route.coordinates))
         );
         const allSignals = await fetchTrafficSignalsInBoundingBox(mergedBbox);
+        t[1] = Date.now() - stepStart;
+        stepStart = Date.now();
+        setLoadingSteps(makeSteps(2, t));
 
         const baseLabels = ["Fastest", "Balanced", "Alternative"];
         const withLightsRaw = rawRoutes.map((r, i) => {
           const { count, lights } = countTrafficLightsFromSignals(r.coordinates, allSignals);
           return { label: baseLabels[i], lightCount: count, time: r.time, distance: r.distance, geojson: r.geojson, coordinates: r.coordinates, lights };
         });
+        t[2] = Date.now() - stepStart;
+        setLoadingSteps(makeSteps(3, t));
 
         const fewestIdx = withLightsRaw.reduce((min, r, i) => (r.lightCount < withLightsRaw[min].lightCount ? i : min), 0);
         const withLights: RouteData[] = withLightsRaw.map((r, i) => ({
@@ -71,6 +95,7 @@ const Index = () => {
         setError(e.message || "Something went wrong. Please try again.");
       } finally {
         setLoading(false);
+        setLoadingSteps([]);
       }
     },
     [isMobile]
@@ -240,6 +265,7 @@ const Index = () => {
           onUseCurrentLocation={handleUseCurrentLocation}
           locationLoading={locatingFromSidebar}
           onCopyLink={routes.length > 0 ? handleCopyLink : undefined}
+          loadingSteps={loadingSteps}
           sharedStartName={sharedStartName}
           sharedEndName={sharedEndName}
           sharedStartCoord={sharedStartCoord}

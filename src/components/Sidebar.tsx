@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import AddressInput from "./AddressInput";
 import RouteCard from "./RouteCard";
+import LoadingProgress from "./LoadingProgress";
+import type { LoadingStep } from "./LoadingProgress";
 import type { NominatimResult } from "@/lib/api";
 import type { FeatureCollection } from "geojson";
 import { Loader2, Share2 } from "lucide-react";
@@ -29,6 +31,7 @@ interface SidebarProps {
   onUseCurrentLocation?: () => void;
   locationLoading?: boolean;
   onCopyLink?: () => void;
+  loadingSteps?: LoadingStep[];
   sharedStartName?: string | null;
   sharedEndName?: string | null;
   sharedStartCoord?: { lat: number; lon: number } | null;
@@ -49,6 +52,7 @@ export default function Sidebar({
   onUseCurrentLocation,
   locationLoading,
   onCopyLink,
+  loadingSteps,
   sharedStartName,
   sharedEndName,
   sharedStartCoord,
@@ -138,11 +142,8 @@ export default function Sidebar({
         </button>
       </div>
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-10 gap-2 text-muted-foreground">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="text-xs">Calculating routes...</span>
-        </div>
+      {loading && loadingSteps && loadingSteps.length > 0 && (
+        <LoadingProgress steps={loadingSteps} />
       )}
 
       {error && (
