@@ -32,6 +32,9 @@ interface SidebarProps {
   locationLoading?: boolean;
   onCopyLink?: () => void;
   loadingSteps?: LoadingStep[];
+  wakeLockSupported?: boolean;
+  wakeLockActive?: boolean;
+  onToggleWakeLock?: () => void;
   sharedStartName?: string | null;
   sharedEndName?: string | null;
   sharedStartCoord?: { lat: number; lon: number } | null;
