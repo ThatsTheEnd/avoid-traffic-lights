@@ -8,7 +8,7 @@ import type { LoadingStep } from "@/components/LoadingProgress";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -291,8 +291,16 @@ const Index = () => {
           startTrackingRef={startTrackingRef}
         />
 
+        {/* Mobile loading indicator on map */}
+        {isMobile && !sidebarOpen && loading && (
+          <div className="fixed top-4 left-20 z-20 bg-card shadow-lg rounded-full px-4 py-2 flex items-center gap-2 border border-border">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span className="text-xs font-medium text-foreground">Calculating routes…</span>
+          </div>
+        )}
+
         {/* Mobile route indicator pill */}
-        {isMobile && !sidebarOpen && routes.length > 0 && activeRouteIndex !== null && (
+        {isMobile && !sidebarOpen && !loading && routes.length > 0 && activeRouteIndex !== null && (
           <button
             onClick={() => setSidebarOpen(true)}
             className="fixed top-4 left-20 z-20 bg-card shadow-lg rounded-full px-4 py-2 flex items-center gap-2 border border-border"
