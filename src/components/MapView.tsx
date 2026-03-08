@@ -1,11 +1,15 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import type { TrafficLight } from "@/lib/api";
 import type { FeatureCollection } from "geojson";
+import type { LocationState } from "./LocationButton";
 
 export interface MapViewHandle {
   showRoute: (geojson: FeatureCollection, lights: TrafficLight[], highlight?: boolean) => void;
   clearAll: () => void;
   fitToRoute: (coordinates: [number, number][]) => void;
+  flyTo: (lng: number, lat: number, zoom?: number) => void;
+  updateUserLocation: (state: LocationState) => void;
+  removeUserLocation: () => void;
 }
 
 declare global {
@@ -15,7 +19,6 @@ declare global {
 }
 
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-
 const MAPLIBRE_SCRIPT_ID = "maplibre-gl-cdn-script";
 
 const loadMapLibre = async (): Promise<any> => {
@@ -24,10 +27,7 @@ const loadMapLibre = async (): Promise<any> => {
   const existing = document.getElementById(MAPLIBRE_SCRIPT_ID) as HTMLScriptElement | null;
   if (existing) {
     await new Promise<void>((resolve, reject) => {
-      if (window.maplibregl) {
-        resolve();
-        return;
-      }
+      if (window.maplibregl) { resolve(); return; }
       existing.addEventListener("load", () => resolve(), { once: true });
       existing.addEventListener("error", () => reject(new Error("Failed to load MapLibre script")), { once: true });
     });
@@ -47,6 +47,49 @@ const loadMapLibre = async (): Promise<any> => {
   return window.maplibregl;
 };
 
+/** Create the blue dot + direction cone SVG element */
+function createUserMarkerElement(): HTMLDivElement {
+  const container = document.createElement("div");
+  container.style.width = "60px";
+  container.style.height = "60px";
+  container.style.position = "relative";
+  container.className = "user-location-marker";
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", "60");
+  svg.setAttribute("height", "60");
+  svg.setAttribute("viewBox", "0 0 60 60");
+  svg.style.position = "absolute";
+  svg.style.top = "0";
+  svg.style.left = "0";
+
+  // Direction cone (pointing up = north, rotated via CSS)
+  const cone = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  cone.setAttribute("d", "M30 4 L42 26 L18 26 Z");
+  cone.setAttribute("fill", "rgba(59, 130, 246, 0.35)");
+  cone.setAttribute("class", "direction-cone");
+  cone.style.display = "none";
+  svg.appendChild(cone);
+
+  // Blue dot
+  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  circle.setAttribute("cx", "30");
+  circle.setAttribute("cy", "30");
+  circle.setAttribute("r", "7");
+  circle.setAttribute("fill", "#3B82F6");
+  circle.setAttribute("stroke", "white");
+  circle.setAttribute("stroke-width", "3");
+  svg.appendChild(circle);
+
+  container.appendChild(svg);
+  return container;
+}
+
+function metersToPixels(meters: number, lat: number, zoom: number): number {
+  const metersPerPixel = (156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom);
+  return meters / metersPerPixel;
+}
+
 const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any | null>(null);
@@ -54,6 +97,11 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const popupsRef = useRef<any[]>([]);
   const styleLoadedRef = useRef(false);
   const pendingOpsRef = useRef<(() => void)[]>([]);
+
+  // User location refs
+  const userMarkerRef = useRef<any | null>(null);
+  const userMarkerElRef = useRef<HTMLDivElement | null>(null);
+  const accuracySourceAdded = useRef(false);
 
   const whenReady = (fn: () => void) => {
     if (styleLoadedRef.current && mapRef.current) {
@@ -76,12 +124,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
         style: {
           version: 8,
           sources: {
-            osm: {
-              type: "raster",
-              tiles: [TILE_URL],
-              tileSize: 256,
-              attribution: "© OpenStreetMap contributors",
-            },
+            osm: { type: "raster", tiles: [TILE_URL], tileSize: 256, attribution: "© OpenStreetMap contributors" },
           },
           layers: [{ id: "osm", type: "raster", source: "osm" }],
         },
@@ -99,11 +142,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
     };
 
     initMap();
-
-    return () => {
-      disposed = true;
-      mapRef.current?.remove();
-    };
+    return () => { disposed = true; mapRef.current?.remove(); };
   }, []);
 
   const clearAll = () => {
@@ -121,11 +160,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
     popupsRef.current = [];
   };
 
-  const showRoute = (
-    geojson: FeatureCollection,
-    lights: TrafficLight[],
-    highlight = false
-  ) => {
+  const showRoute = (geojson: FeatureCollection, lights: TrafficLight[], highlight = false) => {
     whenReady(() => {
       const map = mapRef.current;
       const maplibregl = window.maplibregl;
@@ -187,19 +222,90 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
 
   const fitToRoute = (coordinates: [number, number][]) => {
     if (coordinates.length === 0) return;
-
     whenReady(() => {
       const map = mapRef.current;
       const maplibregl = window.maplibregl;
       if (!map || !maplibregl) return;
-
       const bounds = new maplibregl.LngLatBounds();
       coordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
       map.fitBounds(bounds, { padding: 60, duration: 800 });
     });
   };
 
-  useImperativeHandle(ref, () => ({ showRoute, clearAll, fitToRoute }));
+  const flyTo = (lng: number, lat: number, zoom = 16) => {
+    whenReady(() => {
+      mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 800 });
+    });
+  };
+
+  const updateUserLocation = (state: LocationState) => {
+    whenReady(() => {
+      const map = mapRef.current;
+      const maplibregl = window.maplibregl;
+      if (!map || !maplibregl) return;
+
+      // Create or update marker
+      if (!userMarkerRef.current) {
+        const el = createUserMarkerElement();
+        userMarkerElRef.current = el;
+        userMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
+          .setLngLat([state.lon, state.lat])
+          .addTo(map);
+      } else {
+        userMarkerRef.current.setLngLat([state.lon, state.lat]);
+      }
+
+      // Update direction cone
+      const el = userMarkerElRef.current;
+      if (el) {
+        const cone = el.querySelector(".direction-cone") as SVGElement | null;
+        if (cone) {
+          if (state.heading !== null) {
+            cone.style.display = "block";
+            el.style.transform = `rotate(${state.heading}deg)`;
+          } else {
+            cone.style.display = "none";
+            el.style.transform = "";
+          }
+        }
+      }
+
+      // Accuracy circle via GeoJSON source
+      const accuracyGeoJSON = createAccuracyCircle(state.lat, state.lon, state.accuracy);
+      if (!accuracySourceAdded.current) {
+        map.addSource("user-accuracy", { type: "geojson", data: accuracyGeoJSON });
+        map.addLayer({
+          id: "user-accuracy",
+          type: "fill",
+          source: "user-accuracy",
+          paint: {
+            "fill-color": "#3B82F6",
+            "fill-opacity": 0.12,
+          },
+        });
+        accuracySourceAdded.current = true;
+      } else {
+        map.getSource("user-accuracy")?.setData(accuracyGeoJSON);
+      }
+    });
+  };
+
+  const removeUserLocation = () => {
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove();
+      userMarkerRef.current = null;
+      userMarkerElRef.current = null;
+    }
+
+    const map = mapRef.current;
+    if (map && accuracySourceAdded.current) {
+      if (map.getLayer("user-accuracy")) map.removeLayer("user-accuracy");
+      if (map.getSource("user-accuracy")) map.removeSource("user-accuracy");
+      accuracySourceAdded.current = false;
+    }
+  };
+
+  useImperativeHandle(ref, () => ({ showRoute, clearAll, fitToRoute, flyTo, updateUserLocation, removeUserLocation }));
 
   return (
     <div className="relative w-full h-full">
@@ -217,6 +323,25 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
     </div>
   );
 });
+
+/** Generate a GeoJSON polygon approximating a circle */
+function createAccuracyCircle(lat: number, lon: number, radiusMeters: number): any {
+  const points = 36;
+  const coords: [number, number][] = [];
+  for (let i = 0; i <= points; i++) {
+    const angle = (i / points) * 2 * Math.PI;
+    const dx = radiusMeters * Math.cos(angle);
+    const dy = radiusMeters * Math.sin(angle);
+    const dLat = dy / 111320;
+    const dLon = dx / (111320 * Math.cos((lat * Math.PI) / 180));
+    coords.push([lon + dLon, lat + dLat]);
+  }
+  return {
+    type: "Feature",
+    geometry: { type: "Polygon", coordinates: [coords] },
+    properties: {},
+  };
+}
 
 MapView.displayName = "MapView";
 
