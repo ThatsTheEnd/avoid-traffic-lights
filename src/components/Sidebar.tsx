@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { version } from "../../package.json";
 import AddressInput from "./AddressInput";
 import RouteCard from "./RouteCard";
 import LoadingProgress from "./LoadingProgress";
@@ -118,7 +119,7 @@ export default function Sidebar({
           <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
             🚲 GreenLight
           </h1>
-          <span className="text-[10px] text-muted-foreground font-mono">v0.1.16</span>
+          <span className="text-[10px] text-muted-foreground font-mono">v{version}</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Find the route with fewest traffic lights
