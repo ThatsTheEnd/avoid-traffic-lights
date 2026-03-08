@@ -122,7 +122,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   };
 
   const showRoute = (
-    geojson: GeoJSON.FeatureCollection,
+    geojson: FeatureCollection,
     lights: TrafficLight[],
     highlight = false
   ) => {

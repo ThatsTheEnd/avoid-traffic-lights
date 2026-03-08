@@ -10,7 +10,7 @@ export interface RouteData {
   lightCount: number;
   time: number;
   distance: number;
-  geojson: GeoJSON.FeatureCollection;
+  geojson: FeatureCollection;
   coordinates: [number, number][];
   lights: { lat: number; lon: number }[];
 }
