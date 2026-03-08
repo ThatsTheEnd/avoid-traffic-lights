@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { geocode, NominatimResult } from "@/lib/api";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { MapPin } from "lucide-react";
+import { toast } from "sonner";
 
 interface AddressInputProps {
   placeholder: string;
@@ -32,7 +33,7 @@ export default function AddressInput({
       try {
         const results = await geocode(q);
         setSuggestions(results);
-        setOpen(results.length > 0 || (showCurrentLocation && q.length === 0));
+        setOpen(results.length > 0 || (showCurrentLocation === true && q.length === 0));
       } catch {
         setSuggestions([]);
       }
@@ -54,33 +55,57 @@ export default function AddressInput({
   }, []);
 
   const handleUseCurrentLocation = async () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+
     setLocating(true);
     setOpen(false);
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const displayName = await reverseGeocode(latitude, longitude);
-        const name = displayName || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-        onChange(name);
-        onSelect({
-          place_id: 0,
-          display_name: name,
-          lat: String(latitude),
-          lon: String(longitude),
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
         });
-        onUseCurrentLocation?.();
-        setLocating(false);
-      },
-      () => {
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  };
+      });
 
-  const showDropdown = open || (showCurrentLocation && value.length === 0 && open);
+      const { latitude, longitude } = pos.coords;
+      console.log("[Location] Got coordinates:", latitude, longitude);
+
+      let displayName: string | null = null;
+      try {
+        displayName = await reverseGeocode(latitude, longitude);
+      } catch (e) {
+        console.warn("[Location] Reverse geocode failed:", e);
+      }
+
+      const name = displayName || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+      onChange(name);
+      onSelect({
+        place_id: 0,
+        display_name: name,
+        lat: String(latitude),
+        lon: String(longitude),
+      });
+      onUseCurrentLocation?.();
+      toast.success("Location set as start point");
+    } catch (err: any) {
+      console.error("[Location] Error:", err);
+      const code = err?.code;
+      if (code === 1) {
+        toast.error("Location permission denied. Please allow location access and try again.");
+      } else if (code === 3) {
+        toast.error("Location request timed out. Please try again.");
+      } else {
+        toast.error("Could not get your location: " + (err?.message || "Unknown error"));
+      }
+    } finally {
+      setLocating(false);
+    }
+  };
 
   return (
     <div ref={containerRef} className="relative">
@@ -103,7 +128,10 @@ export default function AddressInput({
           {showCurrentLocation && (
             <li
               className="cursor-pointer px-3 py-2.5 text-xs text-foreground hover:bg-accent transition-colors flex items-center gap-2 border-b border-border"
-              onClick={handleUseCurrentLocation}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleUseCurrentLocation();
+              }}
             >
               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
               <span className="font-medium">Use current location</span>
