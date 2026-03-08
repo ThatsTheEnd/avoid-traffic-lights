@@ -5,7 +5,7 @@ import LoadingProgress from "./LoadingProgress";
 import type { LoadingStep } from "./LoadingProgress";
 import type { NominatimResult } from "@/lib/api";
 import type { FeatureCollection } from "geojson";
-import { Loader2, Share2 } from "lucide-react";
+import { Loader2, Share2, Sun } from "lucide-react";
 
 export interface RouteData {
   label: string;
