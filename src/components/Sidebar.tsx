@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { version } from "../../package.json";
 import AddressInput from "./AddressInput";
 import RouteCard from "./RouteCard";
 import LoadingProgress from "./LoadingProgress";
