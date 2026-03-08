@@ -6,9 +6,6 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 // Lock file synced for CI compatibility
 export default defineConfig(({ mode }) => ({
-  define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
-  },
   base: process.env.GITHUB_ACTIONS ? "/avoid-traffic-lights/" : "/",
   server: {
     host: "::",
