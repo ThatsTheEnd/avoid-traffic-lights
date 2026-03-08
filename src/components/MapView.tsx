@@ -15,6 +15,16 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const popupsRef = useRef<maplibregl.Popup[]>([]);
+  const styleLoadedRef = useRef(false);
+  const pendingOpsRef = useRef<(() => void)[]>([]);
+
+  const whenReady = (fn: () => void) => {
+    if (styleLoadedRef.current && mapRef.current) {
+      fn();
+    } else {
+      pendingOpsRef.current.push(fn);
+    }
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -37,6 +47,11 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
     mapRef.current = map;
+    map.on("load", () => {
+      styleLoadedRef.current = true;
+      pendingOpsRef.current.forEach((fn) => fn());
+      pendingOpsRef.current = [];
+    });
     return () => map.remove();
   }, []);
 
@@ -60,68 +75,67 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
     lights: TrafficLight[],
     highlight = false
   ) => {
-    const map = mapRef.current;
-    if (!map) return;
+    whenReady(() => {
+      const map = mapRef.current!;
+      const sourceId = highlight ? "route-line-highlight" : "route-line";
 
-    const sourceId = highlight ? "route-line-highlight" : "route-line";
+      if (map.getLayer(sourceId)) map.removeLayer(sourceId);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+      if (!highlight) {
+        markersRef.current.forEach((m) => m.remove());
+        markersRef.current = [];
+        popupsRef.current.forEach((p) => p.remove());
+        popupsRef.current = [];
+      }
 
-    // Clean previous
-    if (map.getLayer(sourceId)) map.removeLayer(sourceId);
-    if (map.getSource(sourceId)) map.removeSource(sourceId);
-    if (!highlight) {
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-      popupsRef.current.forEach((p) => p.remove());
-      popupsRef.current = [];
-    }
-
-    map.addSource(sourceId, { type: "geojson", data: geojson });
-    map.addLayer({
-      id: sourceId,
-      type: "line",
-      source: sourceId,
-      paint: {
-        "line-color": highlight ? "#81b29a" : "#2d6a4f",
-        "line-width": highlight ? 4 : 5,
-        "line-opacity": highlight ? 0.5 : 1,
-      },
-    });
-
-    if (!highlight) {
-      // Add traffic light markers
-      lights.forEach((light) => {
-        const el = document.createElement("div");
-        el.style.width = "12px";
-        el.style.height = "12px";
-        el.style.borderRadius = "50%";
-        el.style.backgroundColor = "#e63946";
-        el.style.border = "2px solid white";
-        el.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)";
-        el.style.cursor = "pointer";
-
-        const popup = new maplibregl.Popup({ offset: 10, closeButton: false })
-          .setHTML("<span style='font-size:12px'>🚦 Traffic light</span>");
-        popupsRef.current.push(popup);
-
-        const marker = new maplibregl.Marker({ element: el })
-          .setLngLat([light.lon, light.lat])
-          .setPopup(popup)
-          .addTo(map);
-
-        el.addEventListener("mouseenter", () => popup.addTo(map));
-        el.addEventListener("mouseleave", () => popup.remove());
-
-        markersRef.current.push(marker);
+      map.addSource(sourceId, { type: "geojson", data: geojson });
+      map.addLayer({
+        id: sourceId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": highlight ? "#81b29a" : "#2d6a4f",
+          "line-width": highlight ? 4 : 5,
+          "line-opacity": highlight ? 0.5 : 1,
+        },
       });
-    }
+
+      if (!highlight) {
+        lights.forEach((light) => {
+          const el = document.createElement("div");
+          el.style.width = "12px";
+          el.style.height = "12px";
+          el.style.borderRadius = "50%";
+          el.style.backgroundColor = "#e63946";
+          el.style.border = "2px solid white";
+          el.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)";
+          el.style.cursor = "pointer";
+
+          const popup = new maplibregl.Popup({ offset: 10, closeButton: false })
+            .setHTML("<span style='font-size:12px'>🚦 Traffic light</span>");
+          popupsRef.current.push(popup);
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([light.lon, light.lat])
+            .setPopup(popup)
+            .addTo(map);
+
+          el.addEventListener("mouseenter", () => popup.addTo(map));
+          el.addEventListener("mouseleave", () => popup.remove());
+
+          markersRef.current.push(marker);
+        });
+      }
+    });
   };
 
   const fitToRoute = (coordinates: [number, number][]) => {
-    const map = mapRef.current;
-    if (!map || coordinates.length === 0) return;
-    const bounds = new maplibregl.LngLatBounds();
-    coordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
-    map.fitBounds(bounds, { padding: 60, duration: 800 });
+    whenReady(() => {
+      const map = mapRef.current!;
+      const bounds = new maplibregl.LngLatBounds();
+      coordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
+      map.fitBounds(bounds, { padding: 60, duration: 800 });
+    });
   };
 
   useImperativeHandle(ref, () => ({ showRoute, clearAll, fitToRoute }));
