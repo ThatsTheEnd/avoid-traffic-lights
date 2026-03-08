@@ -22,20 +22,20 @@ const Index = () => {
         const rawRoutes = await fetchRoutes(startLat, startLon, endLat, endLon);
 
         // Count traffic lights for all routes in parallel
-        const withLights = await Promise.all(
-          rawRoutes.map(async (r) => {
-            const { count, lights } = await countTrafficLights(r.coordinates);
-            return {
-              label: r.label,
-              lightCount: count,
-              time: r.time,
-              distance: r.distance,
-              geojson: r.geojson,
-              coordinates: r.coordinates,
-              lights,
-            } as RouteData;
-          })
-        );
+        // Sequence Overpass calls to avoid rate limiting
+        const withLights: RouteData[] = [];
+        for (const r of rawRoutes) {
+          const { count, lights } = await countTrafficLights(r.coordinates);
+          withLights.push({
+            label: r.label,
+            lightCount: count,
+            time: r.time,
+            distance: r.distance,
+            geojson: r.geojson,
+            coordinates: r.coordinates,
+            lights,
+          });
+        }
 
         setRoutes(withLights);
 
