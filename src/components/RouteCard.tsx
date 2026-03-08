@@ -3,6 +3,8 @@ interface RouteCardProps {
   lightCount: number;
   time: number;
   distance: number;
+  ascend: number;
+  descend: number;
   isFewest: boolean;
   isActive: boolean;
   onSelect: () => void;
@@ -14,6 +16,8 @@ export default function RouteCard({
   lightCount,
   time,
   distance,
+  ascend,
+  descend,
   isFewest,
   isActive,
   onSelect,
@@ -45,9 +49,11 @@ export default function RouteCard({
       <div className="text-2xl font-bold text-foreground mb-3">
         🚦 {lightCount}
       </div>
-      <div className="flex gap-4 text-xs text-muted-foreground">
+      <div className="flex gap-4 text-xs text-muted-foreground flex-wrap">
         <span>🕒 {Math.round(time)} min</span>
         <span>📏 {distance.toFixed(1)} km</span>
+        <span>⬆ {Math.round(ascend)} m</span>
+        <span>⬇ {Math.round(descend)} m</span>
       </div>
     </button>
   );

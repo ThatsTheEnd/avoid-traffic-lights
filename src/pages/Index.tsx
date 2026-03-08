@@ -76,7 +76,7 @@ const Index = () => {
         const baseLabels = ["Fastest", "Balanced", "Alternative"];
         const withLightsRaw = rawRoutes.map((r, i) => {
           const { count, lights } = countTrafficLightsFromSignals(r.coordinates, allSignals);
-          return { label: baseLabels[i], lightCount: count, time: r.time, distance: r.distance, geojson: r.geojson, coordinates: r.coordinates, lights };
+          return { label: baseLabels[i], lightCount: count, time: r.time, distance: r.distance, ascend: r.ascend, descend: r.descend, geojson: r.geojson, coordinates: r.coordinates, lights };
         });
         t[2] = Date.now() - stepStart;
         setLoadingSteps(makeSteps(3, t));

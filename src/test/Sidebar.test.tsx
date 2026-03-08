@@ -45,6 +45,8 @@ describe("Sidebar", () => {
         geojson: { type: "FeatureCollection" as const, features: [] },
         coordinates: [[8.36, 47.44]] as [number, number][],
         lights: [],
+        ascend: 50,
+        descend: 30,
       },
     ];
     render(<Sidebar {...defaultProps} routes={routes} activeRouteIndex={0} onReset={onReset} />);
@@ -65,6 +67,8 @@ describe("Sidebar", () => {
         geojson: { type: "FeatureCollection" as const, features: [] },
         coordinates: [] as [number, number][],
         lights: [],
+        ascend: 50,
+        descend: 30,
       },
     ];
     rerender(<Sidebar {...defaultProps} routes={routes} activeRouteIndex={0} onCopyLink={vi.fn()} />);
@@ -81,6 +85,8 @@ describe("Sidebar", () => {
         geojson: { type: "FeatureCollection" as const, features: [] },
         coordinates: [] as [number, number][],
         lights: [],
+        ascend: 100,
+        descend: 60,
       },
       {
         label: "Fewest Lights",
@@ -90,6 +96,8 @@ describe("Sidebar", () => {
         geojson: { type: "FeatureCollection" as const, features: [] },
         coordinates: [] as [number, number][],
         lights: [],
+        ascend: 80,
+        descend: 40,
       },
     ];
     render(<Sidebar {...defaultProps} routes={routes} activeRouteIndex={0} />);

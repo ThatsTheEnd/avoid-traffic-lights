@@ -12,6 +12,8 @@ export interface RouteData {
   lightCount: number;
   time: number;
   distance: number;
+  ascend: number;
+  descend: number;
   geojson: FeatureCollection;
   coordinates: [number, number][];
   lights: { lat: number; lon: number }[];
@@ -167,6 +169,8 @@ export default function Sidebar({
               lightCount={r.lightCount}
               time={r.time}
               distance={r.distance}
+              ascend={r.ascend}
+              descend={r.descend}
               isFewest={i === fewestIdx}
               isActive={i === activeRouteIndex}
               onSelect={() => onSelectRoute(i)}
