@@ -142,11 +142,8 @@ export default function Sidebar({
         </button>
       </div>
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-10 gap-2 text-muted-foreground">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="text-xs">Calculating routes...</span>
-        </div>
+      {loading && loadingSteps && loadingSteps.length > 0 && (
+        <LoadingProgress steps={loadingSteps} />
       )}
 
       {error && (
