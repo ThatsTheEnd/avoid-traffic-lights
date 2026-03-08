@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import Sidebar, { RouteData } from "@/components/Sidebar";
 import MapView, { MapViewHandle } from "@/components/MapView";
-import { fetchRoutes, countTrafficLights } from "@/lib/api";
+import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeBoundingBoxes, fetchTrafficSignalsInBoundingBox } from "@/lib/api";
 
 const Index = () => {
   const [routes, setRoutes] = useState<RouteData[]>([]);
@@ -21,12 +21,15 @@ const Index = () => {
       try {
         const rawRoutes = await fetchRoutes(startLat, startLon, endLat, endLon);
 
-        // Count traffic lights for all routes in parallel
-        // Sequence Overpass calls to avoid rate limiting
-        const withLights: RouteData[] = [];
-        for (const r of rawRoutes) {
-          const { count, lights } = await countTrafficLights(r.coordinates);
-          withLights.push({
+        // Single Overpass query for all routes to avoid rate limits
+        const mergedBbox = mergeBoundingBoxes(
+          rawRoutes.map((route) => getRouteBoundingBox(route.coordinates))
+        );
+        const allSignals = await fetchTrafficSignalsInBoundingBox(mergedBbox);
+
+        const withLights: RouteData[] = rawRoutes.map((r) => {
+          const { count, lights } = countTrafficLightsFromSignals(r.coordinates, allSignals);
+          return {
             label: r.label,
             lightCount: count,
             time: r.time,
@@ -34,8 +37,8 @@ const Index = () => {
             geojson: r.geojson,
             coordinates: r.coordinates,
             lights,
-          });
-        }
+          };
+        });
 
         setRoutes(withLights);
 
