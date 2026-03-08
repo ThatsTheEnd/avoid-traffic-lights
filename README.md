@@ -1,8 +1,11 @@
 # 🚦 GreenLight — Fewest Traffic Lights for Cyclists
 
+[![CI](https://github.com/ThatsTheEnd/avoid-traffic-lights/actions/workflows/ci.yml/badge.svg)](https://github.com/ThatsTheEnd/avoid-traffic-lights/actions/workflows/ci.yml)
+[![GitHub Pages](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://thatstheend.github.io/avoid-traffic-lights/)
+
 **Plan smarter bike commutes.** GreenLight finds cycling routes with the fewest traffic lights so you can ride uninterrupted.
 
-🌐 **Live app:** [avoid-traffic-lights.lovable.app](https://avoid-traffic-lights.lovable.app)
+🌐 **Live app:** [avoid-traffic-lights.lovable.app](https://avoid-traffic-lights.lovable.app) · [GitHub Pages](https://thatstheend.github.io/avoid-traffic-lights/)
 
 ---
 
