@@ -35,7 +35,7 @@ export default function LocationButton({
 
   const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
     if (event.alpha !== null) {
-      const heading = (event as any).webkitCompassHeading ?? event.alpha;
+      const heading = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading ?? event.alpha;
       compassHeadingRef.current = heading;
     }
   }, []);
@@ -57,7 +57,7 @@ export default function LocationButton({
 
   const startCompass = useCallback(async () => {
     if (isIOS()) {
-      const DOE = DeviceOrientationEvent as any;
+      const DOE = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
       if (typeof DOE.requestPermission === "function") {
         try {
           const response = await DOE.requestPermission();

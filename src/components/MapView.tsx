@@ -13,6 +13,7 @@ export interface MapViewHandle {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interface Window {
     maplibregl?: any;
   }
@@ -21,6 +22,7 @@ declare global {
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const MAPLIBRE_SCRIPT_ID = "maplibre-gl-cdn-script";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const loadMapLibre = async (): Promise<any> => {
   if (window.maplibregl) return window.maplibregl;
 
@@ -92,13 +94,17 @@ function metersToPixels(meters: number, lat: number, zoom: number): number {
 
 const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const popupsRef = useRef<any[]>([]);
   const styleLoadedRef = useRef(false);
   const pendingOpsRef = useRef<(() => void)[]>([]);
 
   // User location refs
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userMarkerRef = useRef<any | null>(null);
   const userMarkerElRef = useRef<HTMLDivElement | null>(null);
   const accuracySourceAdded = useRef(false);
@@ -325,7 +331,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
 });
 
 /** Generate a GeoJSON polygon approximating a circle */
-function createAccuracyCircle(lat: number, lon: number, radiusMeters: number): any {
+function createAccuracyCircle(lat: number, lon: number, radiusMeters: number): Record<string, unknown> {
   const points = 36;
   const coords: [number, number][] = [];
   for (let i = 0; i <= points; i++) {
