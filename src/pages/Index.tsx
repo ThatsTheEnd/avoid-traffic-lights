@@ -7,6 +7,7 @@ import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeB
 import type { LoadingStep } from "@/components/LoadingProgress";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWakeLock } from "@/hooks/use-wake-lock";
 import { Menu, X } from "lucide-react";
 import { toast } from "sonner";
 
