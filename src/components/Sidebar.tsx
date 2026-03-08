@@ -77,7 +77,7 @@ export default function Sidebar({
           <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
             🚲 GreenLight
           </h1>
-          <span className="text-[10px] text-muted-foreground font-mono">v0.1.0.7</span>
+          <span className="text-[10px] text-muted-foreground font-mono">v0.1.10</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Find the route with fewest traffic lights
@@ -90,6 +90,7 @@ export default function Sidebar({
           value={startText}
           onChange={setStartText}
           onSelect={(r: NominatimResult) => setStartCoord({ lat: +r.lat, lon: +r.lon })}
+          showCurrentLocation
         />
         <AddressInput
           placeholder="Destination address or place"
