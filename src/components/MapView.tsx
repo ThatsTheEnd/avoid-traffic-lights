@@ -13,8 +13,9 @@ export interface MapViewHandle {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interface Window {
-    maplibregl?: Record<string, unknown>;
+    maplibregl?: any;
   }
 }
 
