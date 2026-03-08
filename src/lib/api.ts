@@ -115,8 +115,8 @@ export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Check if a point is within `threshold` meters of any segment in the route
-function isNearRoute(
+// Check if a point is within `threshold` meters of any segment in the route — exported for testing
+export function isNearRoute(
   lat: number,
   lon: number,
   coords: [number, number][],
