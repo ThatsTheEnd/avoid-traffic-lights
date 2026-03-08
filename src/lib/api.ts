@@ -79,8 +79,17 @@ export async function countTrafficLights(
   south -= pad; west -= pad; north += pad; east += pad;
 
   const query = `[out:json];node["highway"="traffic_signals"](${south},${west},${north},${east});out body;`;
-  const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-  if (!res.ok) throw new Error("Overpass query failed");
+  
+  // Retry logic for Overpass rate limiting
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+    if (res.ok) break;
+    if (res.status === 429 && attempt < 2) {
+      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+    }
+  }
+  if (!res || !res.ok) throw new Error("Overpass query failed (rate limited). Please try again in a moment.");
   const data = await res.json();
   const allSignals: TrafficLight[] = (data.elements || []).map((e: any) => ({
     lat: e.lat,
