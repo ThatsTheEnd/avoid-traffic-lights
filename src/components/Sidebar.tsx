@@ -5,7 +5,7 @@ import LoadingProgress from "./LoadingProgress";
 import type { LoadingStep } from "./LoadingProgress";
 import type { NominatimResult } from "@/lib/api";
 import type { FeatureCollection } from "geojson";
-import { Loader2, Share2 } from "lucide-react";
+import { Loader2, Share2, Sun } from "lucide-react";
 
 export interface RouteData {
   label: string;
@@ -32,6 +32,9 @@ interface SidebarProps {
   locationLoading?: boolean;
   onCopyLink?: () => void;
   loadingSteps?: LoadingStep[];
+  wakeLockSupported?: boolean;
+  wakeLockActive?: boolean;
+  onToggleWakeLock?: () => void;
   sharedStartName?: string | null;
   sharedEndName?: string | null;
   sharedStartCoord?: { lat: number; lon: number } | null;
@@ -53,6 +56,9 @@ export default function Sidebar({
   locationLoading,
   onCopyLink,
   loadingSteps,
+  wakeLockSupported,
+  wakeLockActive,
+  onToggleWakeLock,
   sharedStartName,
   sharedEndName,
   sharedStartCoord,
@@ -172,6 +178,19 @@ export default function Sidebar({
 
       {routes.length > 0 && (
         <div className="p-5 pt-0 mt-auto flex flex-col gap-2">
+          {wakeLockSupported && onToggleWakeLock && (
+            <button
+              onClick={onToggleWakeLock}
+              className={`w-full rounded-lg text-xs py-2 transition-colors flex items-center justify-center gap-1.5 font-medium ${
+                wakeLockActive
+                  ? "bg-primary/20 text-primary"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Sun className="w-3.5 h-3.5" />
+              {wakeLockActive ? "Screen stays on ✓" : "Keep screen on"}
+            </button>
+          )}
           {onCopyLink && (
             <button
               onClick={onCopyLink}

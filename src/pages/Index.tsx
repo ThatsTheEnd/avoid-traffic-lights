@@ -7,6 +7,7 @@ import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeB
 import type { LoadingStep } from "@/components/LoadingProgress";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWakeLock } from "@/hooks/use-wake-lock";
 import { Menu, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +22,7 @@ const Index = () => {
   const [locatingFromSidebar, setLocatingFromSidebar] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  const wakeLock = useWakeLock();
   const mapRef = useRef<MapViewHandle>(null);
   const lastLocationRef = useRef<{ lat: number; lon: number } | null>(null);
   const firstLocationRef = useRef(true);
@@ -138,6 +140,7 @@ const Index = () => {
     setSharedStartCoord(null);
     setSharedEndCoord(null);
     setSearchParams({}, { replace: true });
+    wakeLock.release();
   };
 
   const updateUrlParams = (startLat: number, startLon: number, endLat: number, endLon: number) => {
@@ -266,6 +269,9 @@ const Index = () => {
           locationLoading={locatingFromSidebar}
           onCopyLink={routes.length > 0 ? handleCopyLink : undefined}
           loadingSteps={loadingSteps}
+          wakeLockSupported={wakeLock.supported}
+          wakeLockActive={wakeLock.active}
+          onToggleWakeLock={wakeLock.toggle}
           sharedStartName={sharedStartName}
           sharedEndName={sharedEndName}
           sharedStartCoord={sharedStartCoord}
