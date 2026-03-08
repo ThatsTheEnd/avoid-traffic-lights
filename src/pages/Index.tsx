@@ -17,6 +17,7 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeRouteIndex, setActiveRouteIndex] = useState<number | null>(null);
   const [trackingActive, setTrackingActive] = useState(false);
+  const [loadingSteps, setLoadingSteps] = useState<LoadingStep[]>([]);
   const [locatingFromSidebar, setLocatingFromSidebar] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
