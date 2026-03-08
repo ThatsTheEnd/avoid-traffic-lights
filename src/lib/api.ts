@@ -24,6 +24,8 @@ export interface RouteResult {
   geojson: FeatureCollection;
   distance: number; // km
   time: number; // minutes
+  ascend: number; // meters
+  descend: number; // meters
   coordinates: [number, number][]; // [lng, lat]
 }
 
