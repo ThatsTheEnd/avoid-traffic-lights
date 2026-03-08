@@ -137,21 +137,29 @@ const Index = () => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden relative">
-      {/* Mobile menu button */}
+      {/* Mobile menu button - always on top */}
       {isMobile && (
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute top-4 left-4 z-30 w-12 h-12 rounded-full bg-card shadow-lg border border-border flex items-center justify-center"
+          className="fixed top-4 left-4 z-50 w-12 h-12 rounded-full bg-card shadow-lg border border-border flex items-center justify-center"
           aria-label={sidebarOpen ? "Close menu" : "Open menu"}
         >
           {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       )}
 
+      {/* Overlay when sidebar is open on mobile */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar - slides in on mobile */}
       <div
         className={`
-          ${isMobile ? "absolute inset-y-0 left-0 z-20 transform transition-transform duration-300 ease-in-out" : ""}
+          ${isMobile ? "fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out" : ""}
           ${isMobile && !sidebarOpen ? "-translate-x-full" : "translate-x-0"}
         `}
       >
@@ -171,14 +179,6 @@ const Index = () => {
         />
       </div>
 
-      {/* Overlay when sidebar is open on mobile */}
-      {isMobile && sidebarOpen && (
-        <div
-          className="absolute inset-0 bg-black/40 z-10"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Map */}
       <div className="flex-1 h-full relative">
         <MapView ref={mapRef} />
@@ -192,10 +192,10 @@ const Index = () => {
         />
 
         {/* Mobile route indicator pill */}
-        {isMobile && routes.length > 0 && activeRouteIndex !== null && (
+        {isMobile && !sidebarOpen && routes.length > 0 && activeRouteIndex !== null && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="absolute top-4 left-20 z-10 bg-card shadow-lg rounded-full px-4 py-2 flex items-center gap-2 border border-border"
+            className="fixed top-4 left-20 z-20 bg-card shadow-lg rounded-full px-4 py-2 flex items-center gap-2 border border-border"
           >
             <span className="text-xs font-medium text-foreground">
               {routes[activeRouteIndex].label}
