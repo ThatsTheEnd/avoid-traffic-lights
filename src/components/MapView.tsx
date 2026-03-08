@@ -1,5 +1,6 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import type { TrafficLight } from "@/lib/api";
+import type { FeatureCollection } from "geojson";
 
 export interface MapViewHandle {
   showRoute: (geojson: GeoJSON.FeatureCollection, lights: TrafficLight[], highlight?: boolean) => void;

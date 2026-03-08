@@ -2,6 +2,7 @@ import { useState } from "react";
 import AddressInput from "./AddressInput";
 import RouteCard from "./RouteCard";
 import type { NominatimResult } from "@/lib/api";
+import type { FeatureCollection } from "geojson";
 import { Loader2 } from "lucide-react";
 
 export interface RouteData {

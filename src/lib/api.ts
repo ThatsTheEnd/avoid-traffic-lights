@@ -21,7 +21,7 @@ export async function geocode(query: string): Promise<NominatimResult[]> {
 // BRouter routing
 export interface RouteResult {
   label: string;
-  geojson: GeoJSON.FeatureCollection;
+  geojson: FeatureCollection;
   distance: number; // km
   time: number; // minutes
   coordinates: [number, number][]; // [lng, lat]
