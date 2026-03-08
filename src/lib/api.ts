@@ -60,13 +60,26 @@ export interface TrafficLight {
   lon: number;
 }
 
-export async function countTrafficLights(
-  coordinates: [number, number][]
-): Promise<{ count: number; lights: TrafficLight[] }> {
-  if (coordinates.length === 0) return { count: 0, lights: [] };
+export interface BoundingBox {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}
 
-  // Compute bounding box [minLon, minLat, maxLon, maxLat]
-  let south = Infinity, west = Infinity, north = -Infinity, east = -Infinity;
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export function getRouteBoundingBox(coordinates: [number, number][], pad = 0.001): BoundingBox {
+  let south = Infinity;
+  let west = Infinity;
+  let north = -Infinity;
+  let east = -Infinity;
+
   for (const [lng, lat] of coordinates) {
     if (lat < south) south = lat;
     if (lat > north) north = lat;
@@ -74,34 +87,70 @@ export async function countTrafficLights(
     if (lng > east) east = lng;
   }
 
-  // Small padding
-  const pad = 0.001;
-  south -= pad; west -= pad; north += pad; east += pad;
+  return {
+    south: south - pad,
+    west: west - pad,
+    north: north + pad,
+    east: east + pad,
+  };
+}
 
-  const query = `[out:json];node["highway"="traffic_signals"](${south},${west},${north},${east});out body;`;
-  
-  // Retry logic for Overpass rate limiting
-  let res: Response | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-    if (res.ok) break;
-    if (res.status === 429 && attempt < 2) {
-      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+export function mergeBoundingBoxes(boxes: BoundingBox[]): BoundingBox {
+  return boxes.reduce(
+    (acc, box) => ({
+      south: Math.min(acc.south, box.south),
+      west: Math.min(acc.west, box.west),
+      north: Math.max(acc.north, box.north),
+      east: Math.max(acc.east, box.east),
+    }),
+    { south: Infinity, west: Infinity, north: -Infinity, east: -Infinity }
+  );
+}
+
+export async function fetchTrafficSignalsInBoundingBox(bbox: BoundingBox): Promise<TrafficLight[]> {
+  const query = `[out:json];node["highway"="traffic_signals"](${bbox.south},${bbox.west},${bbox.north},${bbox.east});out body;`;
+
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await fetch(`${endpoint}?data=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        return (data.elements || []).map((e: any) => ({ lat: e.lat, lon: e.lon }));
+      }
+
+      if (res.status === 429 || res.status >= 500) {
+        await sleep(2500 * (attempt + 1));
+        continue;
+      }
+
+      break;
     }
   }
-  if (!res || !res.ok) throw new Error("Overpass query failed (rate limited). Please try again in a moment.");
-  const data = await res.json();
-  const allSignals: TrafficLight[] = (data.elements || []).map((e: any) => ({
-    lat: e.lat,
-    lon: e.lon,
-  }));
 
-  // Filter: only signals within 25m of the route
-  const matched = allSignals.filter((signal) =>
-    isNearRoute(signal.lat, signal.lon, coordinates, 25)
+  throw new Error("Overpass query failed (rate limited). Please try again in a moment.");
+}
+
+export function countTrafficLightsFromSignals(
+  coordinates: [number, number][],
+  signals: TrafficLight[],
+  thresholdMeters = 25
+): { count: number; lights: TrafficLight[] } {
+  if (coordinates.length === 0) return { count: 0, lights: [] };
+
+  const matched = signals.filter((signal) =>
+    isNearRoute(signal.lat, signal.lon, coordinates, thresholdMeters)
   );
 
   return { count: matched.length, lights: matched };
+}
+
+export async function countTrafficLights(
+  coordinates: [number, number][]
+): Promise<{ count: number; lights: TrafficLight[] }> {
+  if (coordinates.length === 0) return { count: 0, lights: [] };
+  const bbox = getRouteBoundingBox(coordinates);
+  const signals = await fetchTrafficSignalsInBoundingBox(bbox);
+  return countTrafficLightsFromSignals(coordinates, signals, 25);
 }
 
 // Haversine distance in meters — exported for testing
