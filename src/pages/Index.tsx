@@ -268,6 +268,9 @@ const Index = () => {
           locationLoading={locatingFromSidebar}
           onCopyLink={routes.length > 0 ? handleCopyLink : undefined}
           loadingSteps={loadingSteps}
+          wakeLockSupported={wakeLock.supported}
+          wakeLockActive={wakeLock.active}
+          onToggleWakeLock={wakeLock.toggle}
           sharedStartName={sharedStartName}
           sharedEndName={sharedEndName}
           sharedStartCoord={sharedStartCoord}
