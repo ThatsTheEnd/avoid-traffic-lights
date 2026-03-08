@@ -60,9 +60,12 @@ export default function Sidebar({
   return (
     <aside className="w-80 shrink-0 h-screen overflow-y-auto bg-card panel-shadow flex flex-col z-10">
       <div className="p-5 border-b border-border">
-        <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
-          🚲 GreenLight
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
+            🚲 GreenLight
+          </h1>
+          <span className="text-[10px] text-muted-foreground font-mono">v0.1.0.1</span>
+        </div>
         <p className="text-xs text-muted-foreground mt-1">
           Find the route with fewest traffic lights
         </p>
