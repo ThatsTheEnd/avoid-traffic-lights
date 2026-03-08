@@ -310,7 +310,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   return (
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
-      <div className="absolute bottom-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md text-xs flex gap-3 items-center border border-border">
+      <div className="absolute bottom-10 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md text-xs flex gap-3 items-center border border-border">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-4 h-1 rounded-full bg-primary" />
           Route

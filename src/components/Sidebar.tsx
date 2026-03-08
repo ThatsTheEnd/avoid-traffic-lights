@@ -90,6 +90,7 @@ export default function Sidebar({
           value={startText}
           onChange={setStartText}
           onSelect={(r: NominatimResult) => setStartCoord({ lat: +r.lat, lon: +r.lon })}
+          showCurrentLocation
         />
         <AddressInput
           placeholder="Destination address or place"
