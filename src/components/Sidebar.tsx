@@ -26,6 +26,8 @@ interface SidebarProps {
   onReset: () => void;
   locationStartText?: string | null;
   locationStartCoord?: { lat: number; lon: number } | null;
+  onUseCurrentLocation?: () => void;
+  locationLoading?: boolean;
 }
 
 export default function Sidebar({
@@ -39,15 +41,17 @@ export default function Sidebar({
   onReset,
   locationStartText,
   locationStartCoord,
+  onUseCurrentLocation,
+  locationLoading,
 }: SidebarProps) {
   const [startText, setStartText] = useState("");
   const [endText, setEndText] = useState("");
   const [startCoord, setStartCoord] = useState<{ lat: number; lon: number } | null>(null);
   const [endCoord, setEndCoord] = useState<{ lat: number; lon: number } | null>(null);
 
-  // Accept location from GPS
+  // Accept location from GPS / LocationButton
   useEffect(() => {
-    if (locationStartText && locationStartCoord && !startCoord) {
+    if (locationStartText && locationStartCoord) {
       setStartText(locationStartText);
       setStartCoord(locationStartCoord);
     }
@@ -77,7 +81,7 @@ export default function Sidebar({
           <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
             🚲 GreenLight
           </h1>
-          <span className="text-[10px] text-muted-foreground font-mono">v0.1.11</span>
+          <span className="text-[10px] text-muted-foreground font-mono">v0.1.12</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Find the route with fewest traffic lights
@@ -91,6 +95,8 @@ export default function Sidebar({
           onChange={setStartText}
           onSelect={(r: NominatimResult) => setStartCoord({ lat: +r.lat, lon: +r.lon })}
           showCurrentLocation
+          onUseCurrentLocation={onUseCurrentLocation}
+          locationLoading={locationLoading}
         />
         <AddressInput
           placeholder="Destination address or place"
