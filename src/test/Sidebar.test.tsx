@@ -45,6 +45,8 @@ describe("Sidebar", () => {
         geojson: { type: "FeatureCollection" as const, features: [] },
         coordinates: [[8.36, 47.44]] as [number, number][],
         lights: [],
+        ascend: 50,
+        descend: 30,
       },
     ];
     render(<Sidebar {...defaultProps} routes={routes} activeRouteIndex={0} onReset={onReset} />);
