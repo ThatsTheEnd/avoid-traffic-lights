@@ -14,7 +14,7 @@ export interface MapViewHandle {
 
 declare global {
   interface Window {
-    maplibregl?: any;
+    maplibregl?: Record<string, unknown>;
   }
 }
 
