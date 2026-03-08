@@ -131,7 +131,7 @@ export function isNearRoute(
   return false;
 }
 
-function pointToSegmentDistance(
+export function pointToSegmentDistance(
   pLat: number, pLon: number,
   aLat: number, aLon: number,
   bLat: number, bLon: number
