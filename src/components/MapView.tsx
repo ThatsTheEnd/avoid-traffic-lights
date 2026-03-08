@@ -21,7 +21,7 @@ declare global {
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const MAPLIBRE_SCRIPT_ID = "maplibre-gl-cdn-script";
 
-const loadMapLibre = async (): Promise<any> => {
+const loadMapLibre = async (): Promise<Record<string, unknown>> => {
   if (window.maplibregl) return window.maplibregl;
 
   const existing = document.getElementById(MAPLIBRE_SCRIPT_ID) as HTMLScriptElement | null;
