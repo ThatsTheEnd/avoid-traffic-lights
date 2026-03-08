@@ -2,6 +2,7 @@ import { useState } from "react";
 import AddressInput from "./AddressInput";
 import RouteCard from "./RouteCard";
 import type { NominatimResult } from "@/lib/api";
+import type { FeatureCollection } from "geojson";
 import { Loader2 } from "lucide-react";
 
 export interface RouteData {
@@ -9,7 +10,7 @@ export interface RouteData {
   lightCount: number;
   time: number;
   distance: number;
-  geojson: GeoJSON.FeatureCollection;
+  geojson: FeatureCollection;
   coordinates: [number, number][];
   lights: { lat: number; lon: number }[];
 }
@@ -64,7 +65,7 @@ export default function Sidebar({
           <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
             🚲 GreenLight
           </h1>
-          <span className="text-[10px] text-muted-foreground font-mono">v0.1.0.5</span>
+          <span className="text-[10px] text-muted-foreground font-mono">v0.1.0.6</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Find the route with fewest traffic lights
