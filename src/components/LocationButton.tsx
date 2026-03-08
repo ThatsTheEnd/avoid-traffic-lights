@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, MutableRefObject } from "react";
 import { toast } from "sonner";
 
 export interface LocationState {
@@ -15,6 +15,7 @@ interface LocationButtonProps {
   onLocationStop: () => void;
   trackingActive: boolean;
   setTrackingActive: (active: boolean) => void;
+  startTrackingRef?: MutableRefObject<(() => void) | null>;
 }
 
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -25,14 +26,15 @@ export default function LocationButton({
   onLocationStop,
   trackingActive,
   setTrackingActive,
+  startTrackingRef,
 }: LocationButtonProps) {
   const watchIdRef = useRef<number | null>(null);
   const compassHeadingRef = useRef<number | null>(null);
   const orientationListenerRef = useRef<((e: DeviceOrientationEvent) => void) | null>(null);
+  const firstPositionRef = useRef(true);
 
   const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
     if (event.alpha !== null) {
-      // On iOS webkitCompassHeading is more reliable
       const heading = (event as any).webkitCompassHeading ?? event.alpha;
       compassHeadingRef.current = heading;
     }
@@ -48,6 +50,7 @@ export default function LocationButton({
       orientationListenerRef.current = null;
     }
     compassHeadingRef.current = null;
+    firstPositionRef.current = true;
     setTrackingActive(false);
     onLocationStop();
   }, [onLocationStop, setTrackingActive]);
@@ -75,6 +78,8 @@ export default function LocationButton({
   }, [handleOrientation]);
 
   const startTracking = useCallback(() => {
+    if (watchIdRef.current !== null) return; // already tracking
+
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser.");
       return;
@@ -85,11 +90,12 @@ export default function LocationButton({
       return;
     }
 
+    firstPositionRef.current = true;
+
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude, heading: gpsHeading, accuracy, speed } = position.coords;
 
-        // Determine best heading
         const compassH = compassHeadingRef.current;
         let bestHeading: number | null = null;
         if (gpsHeading !== null && speed !== null && speed > 1.4) {
@@ -98,15 +104,14 @@ export default function LocationButton({
           bestHeading = compassH;
         }
 
-        const state: LocationState = {
-          lat: latitude,
-          lon: longitude,
-          accuracy,
-          heading: bestHeading,
-          speed,
-        };
-
+        const state: LocationState = { lat: latitude, lon: longitude, accuracy, heading: bestHeading, speed };
         onLocationUpdate(state);
+
+        // Fire onLocationStart with the first position
+        if (firstPositionRef.current) {
+          firstPositionRef.current = false;
+          onLocationStart(latitude, longitude);
+        }
       },
       (error) => {
         switch (error.code) {
@@ -121,27 +126,21 @@ export default function LocationButton({
         }
         stopTracking();
       },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 1000,
-        timeout: 10000,
-      }
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
 
     watchIdRef.current = watchId;
     setTrackingActive(true);
-
-    // Get initial position for start callback
-    navigator.geolocation.getCurrentPosition(
-      (pos) => onLocationStart(pos.coords.latitude, pos.coords.longitude),
-      () => {},
-      { enableHighAccuracy: true, timeout: 5000 }
-    );
-
     startCompass();
   }, [onLocationStart, onLocationUpdate, stopTracking, setTrackingActive, startCompass]);
 
-  // Cleanup on unmount
+  // Expose startTracking to parent
+  useEffect(() => {
+    if (startTrackingRef) {
+      startTrackingRef.current = startTracking;
+    }
+  }, [startTracking, startTrackingRef]);
+
   useEffect(() => {
     return () => {
       if (watchIdRef.current !== null) {
@@ -155,10 +154,7 @@ export default function LocationButton({
 
   const handleClick = () => {
     if (trackingActive) {
-      // If already tracking, re-center (parent handles it) or stop on long behavior
-      // For now: tap while tracking = re-center (handled via onLocationStart again)
-      // Double functionality: already tracking -> just re-center
-      onLocationStart(0, 0); // signal re-center; parent uses last known pos
+      onLocationStart(0, 0); // re-center signal
       return;
     }
     startTracking();
