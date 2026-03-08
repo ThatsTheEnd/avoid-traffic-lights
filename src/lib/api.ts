@@ -180,7 +180,7 @@ export function countTrafficLightsFromSignals(
   );
 
   // Cluster nearby signals into intersections
-  const clusters = clusterSignals(matched, 35);
+  const clusters = clusterSignals(matched, 50);
   const centroids = clusters.map(clusterCentroid);
 
   return { count: centroids.length, lights: centroids };
