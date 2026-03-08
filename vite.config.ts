@@ -19,9 +19,11 @@ export default defineConfig(({ mode }) => ({
     esbuildOptions: {
       target: "es2022",
     },
+    include: ["react", "react-dom"],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
