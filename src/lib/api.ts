@@ -50,9 +50,11 @@ export async function fetchRoutes(
       const props = (geojson.features[0]?.properties || {}) as Record<string, number>;
       const distance = (props["track-length"] || 0) / 1000;
       const time = (props["total-time"] || 0) / 60;
+      const ascend = (props["filtered ascend"] || 0) as number;
+      const descend = (props["filtered descend"] || 0) as number;
       const geometry = geojson.features[0]?.geometry as LineString;
       const coordinates = (geometry?.coordinates || []) as [number, number][];
-      return { label, geojson, distance, time, coordinates };
+      return { label, geojson, distance, time, ascend, descend, coordinates };
     })
   );
   return results;
