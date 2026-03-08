@@ -4,6 +4,7 @@ import Sidebar, { RouteData } from "@/components/Sidebar";
 import MapView, { MapViewHandle } from "@/components/MapView";
 import LocationButton, { LocationState } from "@/components/LocationButton";
 import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeBoundingBoxes, fetchTrafficSignalsInBoundingBox } from "@/lib/api";
+import type { LoadingStep } from "@/components/LoadingProgress";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, X } from "lucide-react";
