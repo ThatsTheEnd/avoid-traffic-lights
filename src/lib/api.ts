@@ -44,7 +44,7 @@ export async function fetchRoutes(
       const url = `https://brouter.de/brouter?lonlats=${startLon},${startLat}|${endLon},${endLat}&profile=${profile}&alternativeidx=${altIdx}&format=geojson`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Routing failed for ${label}`);
-      const geojson = await res.json() as GeoJSON.FeatureCollection;
+      const geojson = await res.json() as FeatureCollection;
       const props = geojson.features[0]?.properties || {};
       const distance = (props["track-length"] || 0) / 1000;
       const time = (props["total-time"] || 0) / 60;
