@@ -178,6 +178,19 @@ export default function Sidebar({
 
       {routes.length > 0 && (
         <div className="p-5 pt-0 mt-auto flex flex-col gap-2">
+          {wakeLockSupported && onToggleWakeLock && (
+            <button
+              onClick={onToggleWakeLock}
+              className={`w-full rounded-lg text-xs py-2 transition-colors flex items-center justify-center gap-1.5 font-medium ${
+                wakeLockActive
+                  ? "bg-primary/20 text-primary"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Sun className="w-3.5 h-3.5" />
+              {wakeLockActive ? "Screen stays on ✓" : "Keep screen on"}
+            </button>
+          )}
           {onCopyLink && (
             <button
               onClick={onCopyLink}
