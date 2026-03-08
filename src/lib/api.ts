@@ -45,7 +45,7 @@ export async function fetchRoutes(
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Routing failed for ${label}`);
       const geojson = await res.json() as FeatureCollection;
-      const props = geojson.features[0]?.properties || {};
+      const props = (geojson.features[0]?.properties || {}) as Record<string, number>;
       const distance = (props["track-length"] || 0) / 1000;
       const time = (props["total-time"] || 0) / 60;
       const geometry = geojson.features[0]?.geometry as LineString;
