@@ -67,6 +67,8 @@ describe("Sidebar", () => {
         geojson: { type: "FeatureCollection" as const, features: [] },
         coordinates: [] as [number, number][],
         lights: [],
+        ascend: 50,
+        descend: 30,
       },
     ];
     rerender(<Sidebar {...defaultProps} routes={routes} activeRouteIndex={0} onCopyLink={vi.fn()} />);
