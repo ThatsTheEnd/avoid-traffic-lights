@@ -12,6 +12,8 @@ export interface RouteData {
   lightCount: number;
   time: number;
   distance: number;
+  ascend: number;
+  descend: number;
   geojson: FeatureCollection;
   coordinates: [number, number][];
   lights: { lat: number; lon: number }[];
