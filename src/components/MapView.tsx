@@ -92,8 +92,11 @@ function metersToPixels(meters: number, lat: number, zoom: number): number {
 
 const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const popupsRef = useRef<any[]>([]);
   const styleLoadedRef = useRef(false);
   const pendingOpsRef = useRef<(() => void)[]>([]);
