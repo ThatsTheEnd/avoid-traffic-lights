@@ -5,7 +5,7 @@
 
 **Plan smarter bike commutes.** GreenLight finds cycling routes with the fewest traffic lights so you can ride uninterrupted.
 
-🌐 **Live app:** [avoid-traffic-lights.lovable.app](https://avoid-traffic-lights.lovable.app) · [GitHub Pages](https://thatstheend.github.io/avoid-traffic-lights/)
+🌐 [GreenLight App](https://thatstheend.github.io/avoid-traffic-lights/)
 
 ---
 
