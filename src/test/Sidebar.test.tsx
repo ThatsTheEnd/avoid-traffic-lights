@@ -85,6 +85,8 @@ describe("Sidebar", () => {
         geojson: { type: "FeatureCollection" as const, features: [] },
         coordinates: [] as [number, number][],
         lights: [],
+        ascend: 100,
+        descend: 60,
       },
       {
         label: "Fewest Lights",
