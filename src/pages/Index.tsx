@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Sidebar, { RouteData } from "@/components/Sidebar";
 import MapView, { MapViewHandle } from "@/components/MapView";
 import LocationButton, { LocationState } from "@/components/LocationButton";
@@ -6,8 +7,10 @@ import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeB
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, X } from "lucide-react";
+import { toast } from "sonner";
 
 const Index = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,9 +22,15 @@ const Index = () => {
   const mapRef = useRef<MapViewHandle>(null);
   const lastLocationRef = useRef<{ lat: number; lon: number } | null>(null);
   const firstLocationRef = useRef(true);
+  const autoLoadedRef = useRef(false);
 
   const [locationStartText, setLocationStartText] = useState<string | null>(null);
   const [locationStartCoord, setLocationStartCoord] = useState<{ lat: number; lon: number } | null>(null);
+
+  const [sharedStartName, setSharedStartName] = useState<string | null>(null);
+  const [sharedEndName, setSharedEndName] = useState<string | null>(null);
+  const [sharedStartCoord, setSharedStartCoord] = useState<{ lat: number; lon: number } | null>(null);
+  const [sharedEndCoord, setSharedEndCoord] = useState<{ lat: number; lon: number } | null>(null);
 
   const startTrackingRef = useRef<(() => void) | null>(null);
 
@@ -54,7 +63,10 @@ const Index = () => {
 
         setRoutes(withLights);
         selectRoute(withLights, fewestIdx);
-        if (isMobile) setSidebarOpen(false); // Auto-close on mobile after finding routes
+        if (isMobile) setSidebarOpen(false);
+
+        // Update URL with route params
+        updateUrlParams(startLat, startLon, endLat, endLon);
       } catch (e: any) {
         setError(e.message || "Something went wrong. Please try again.");
       } finally {
@@ -96,7 +108,58 @@ const Index = () => {
     setLocatingFromSidebar(false);
     firstLocationRef.current = true;
     lastLocationRef.current = null;
+    setSharedStartName(null);
+    setSharedEndName(null);
+    setSharedStartCoord(null);
+    setSharedEndCoord(null);
+    setSearchParams({}, { replace: true });
   };
+
+  const updateUrlParams = (startLat: number, startLon: number, endLat: number, endLon: number) => {
+    const params = new URLSearchParams();
+    params.set("slat", startLat.toFixed(5));
+    params.set("slon", startLon.toFixed(5));
+    params.set("elat", endLat.toFixed(5));
+    params.set("elon", endLon.toFixed(5));
+    setSearchParams(params, { replace: true });
+  };
+
+  const handleCopyLink = useCallback(() => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success("Link copied to clipboard!");
+    }).catch(() => {
+      toast.error("Failed to copy link");
+    });
+  }, []);
+
+  // Auto-load route from URL params
+  useEffect(() => {
+    if (autoLoadedRef.current) return;
+    const slat = searchParams.get("slat");
+    const slon = searchParams.get("slon");
+    const elat = searchParams.get("elat");
+    const elon = searchParams.get("elon");
+    if (slat && slon && elat && elon) {
+      autoLoadedRef.current = true;
+      const sLatN = parseFloat(slat);
+      const sLonN = parseFloat(slon);
+      const eLatN = parseFloat(elat);
+      const eLonN = parseFloat(elon);
+      if ([sLatN, sLonN, eLatN, eLonN].every((n) => !isNaN(n))) {
+        Promise.all([
+          reverseGeocode(sLatN, sLonN),
+          reverseGeocode(eLatN, eLonN),
+        ]).then(([startName, endName]) => {
+          setSharedStartName(startName || `${sLatN.toFixed(5)}, ${sLonN.toFixed(5)}`);
+          setSharedEndName(endName || `${eLatN.toFixed(5)}, ${eLonN.toFixed(5)}`);
+          setSharedStartCoord({ lat: sLatN, lon: sLonN });
+          setSharedEndCoord({ lat: eLatN, lon: eLonN });
+          handleFindRoutes(sLatN, sLonN, eLatN, eLonN);
+        });
+      }
+    }
+  }, [searchParams, handleFindRoutes]);
 
   const handleLocationStart = useCallback(async (lat: number, lon: number) => {
     if (lat === 0 && lon === 0) {
@@ -176,6 +239,11 @@ const Index = () => {
           locationStartCoord={locationStartCoord}
           onUseCurrentLocation={handleUseCurrentLocation}
           locationLoading={locatingFromSidebar}
+          onCopyLink={routes.length > 0 ? handleCopyLink : undefined}
+          sharedStartName={sharedStartName}
+          sharedEndName={sharedEndName}
+          sharedStartCoord={sharedStartCoord}
+          sharedEndCoord={sharedEndCoord}
         />
       </div>
 
