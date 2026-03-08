@@ -213,6 +213,12 @@ export default function Sidebar({
           </button>
         </div>
       )}
+
+      <div className="mt-auto p-3 border-t border-border text-center">
+        <a href="https://github.com/ThatsTheEnd/avoid-traffic-lights/issues" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+          Found a bug? Report it →
+        </a>
+      </div>
     </aside>
   );
 }
