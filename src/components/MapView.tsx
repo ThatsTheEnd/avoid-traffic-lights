@@ -102,6 +102,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const pendingOpsRef = useRef<(() => void)[]>([]);
 
   // User location refs
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userMarkerRef = useRef<any | null>(null);
   const userMarkerElRef = useRef<HTMLDivElement | null>(null);
   const accuracySourceAdded = useRef(false);
