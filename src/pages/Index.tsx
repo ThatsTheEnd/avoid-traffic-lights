@@ -53,11 +53,7 @@ const Index = () => {
 
         setRoutes(withLights);
 
-        // Auto-select fewest lights route
-        const fewestIdx = withLights.reduce(
-          (min, r, i) => (r.lightCount < withLights[min].lightCount ? i : min),
-          0
-        );
+        // Auto-select fewest lights route (already computed above)
         selectRoute(withLights, fewestIdx);
       } catch (e: any) {
         setError(e.message || "Something went wrong. Please try again.");
