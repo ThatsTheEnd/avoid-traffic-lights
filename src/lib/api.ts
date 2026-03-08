@@ -104,8 +104,8 @@ export async function countTrafficLights(
   return { count: matched.length, lights: matched };
 }
 
-// Haversine distance in meters
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+// Haversine distance in meters — exported for testing
+export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -115,8 +115,8 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Check if a point is within `threshold` meters of any segment in the route
-function isNearRoute(
+// Check if a point is within `threshold` meters of any segment in the route — exported for testing
+export function isNearRoute(
   lat: number,
   lon: number,
   coords: [number, number][],
@@ -131,7 +131,7 @@ function isNearRoute(
   return false;
 }
 
-function pointToSegmentDistance(
+export function pointToSegmentDistance(
   pLat: number, pLon: number,
   aLat: number, aLon: number,
   bLat: number, bLon: number
