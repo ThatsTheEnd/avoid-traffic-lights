@@ -22,6 +22,7 @@ const Index = () => {
   const [locatingFromSidebar, setLocatingFromSidebar] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  const wakeLock = useWakeLock();
   const mapRef = useRef<MapViewHandle>(null);
   const lastLocationRef = useRef<{ lat: number; lon: number } | null>(null);
   const firstLocationRef = useRef(true);
