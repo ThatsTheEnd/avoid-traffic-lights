@@ -329,7 +329,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
 });
 
 /** Generate a GeoJSON polygon approximating a circle */
-function createAccuracyCircle(lat: number, lon: number, radiusMeters: number): any {
+function createAccuracyCircle(lat: number, lon: number, radiusMeters: number): Record<string, unknown> {
   const points = 36;
   const coords: [number, number][] = [];
   for (let i = 0; i <= points; i++) {

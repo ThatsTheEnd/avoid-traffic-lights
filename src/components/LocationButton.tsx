@@ -57,7 +57,7 @@ export default function LocationButton({
 
   const startCompass = useCallback(async () => {
     if (isIOS()) {
-      const DOE = DeviceOrientationEvent as any;
+      const DOE = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
       if (typeof DOE.requestPermission === "function") {
         try {
           const response = await DOE.requestPermission();

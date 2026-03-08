@@ -117,7 +117,7 @@ export async function fetchTrafficSignalsInBoundingBox(bbox: BoundingBox): Promi
       const res = await fetch(`${endpoint}?data=${encodeURIComponent(query)}`);
       if (res.ok) {
         const data = await res.json();
-        return (data.elements || []).map((e: any) => ({ lat: e.lat, lon: e.lon }));
+        return (data.elements || []).map((e: { lat: number; lon: number }) => ({ lat: e.lat, lon: e.lon }));
       }
 
       if (res.status === 429 || res.status >= 500) {

@@ -93,8 +93,8 @@ const Index = () => {
 
         // Update URL with route params
         updateUrlParams(startLat, startLon, endLat, endLon);
-      } catch (e: any) {
-        setError(e.message || "Something went wrong. Please try again.");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
       } finally {
         setLoading(false);
         setLoadingSteps([]);
