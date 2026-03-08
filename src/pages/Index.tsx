@@ -140,6 +140,7 @@ const Index = () => {
     setSharedStartCoord(null);
     setSharedEndCoord(null);
     setSearchParams({}, { replace: true });
+    wakeLock.release();
   };
 
   const updateUrlParams = (startLat: number, startLon: number, endLat: number, endLon: number) => {
