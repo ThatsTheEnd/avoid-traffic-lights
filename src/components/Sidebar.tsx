@@ -52,6 +52,7 @@ export default function Sidebar({
   onUseCurrentLocation,
   locationLoading,
   onCopyLink,
+  loadingSteps,
   sharedStartName,
   sharedEndName,
   sharedStartCoord,
