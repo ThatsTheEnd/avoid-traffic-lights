@@ -132,6 +132,42 @@ export async function fetchTrafficSignalsInBoundingBox(bbox: BoundingBox): Promi
   throw new Error("Overpass query failed (rate limited). Please try again in a moment.");
 }
 
+/** Cluster nearby signals into intersections (within `clusterRadius` meters) */
+export function clusterSignals(
+  signals: TrafficLight[],
+  clusterRadius = 35
+): TrafficLight[][] {
+  const visited = new Set<number>();
+  const clusters: TrafficLight[][] = [];
+
+  for (let i = 0; i < signals.length; i++) {
+    if (visited.has(i)) continue;
+    visited.add(i);
+    const cluster = [signals[i]];
+
+    for (let j = i + 1; j < signals.length; j++) {
+      if (visited.has(j)) continue;
+      // Check distance to any member of the cluster
+      const near = cluster.some(
+        (c) => haversineDistance(c.lat, c.lon, signals[j].lat, signals[j].lon) <= clusterRadius
+      );
+      if (near) {
+        visited.add(j);
+        cluster.push(signals[j]);
+      }
+    }
+    clusters.push(cluster);
+  }
+  return clusters;
+}
+
+/** Return centroid of a cluster as a single representative TrafficLight */
+function clusterCentroid(cluster: TrafficLight[]): TrafficLight {
+  const lat = cluster.reduce((s, c) => s + c.lat, 0) / cluster.length;
+  const lon = cluster.reduce((s, c) => s + c.lon, 0) / cluster.length;
+  return { lat, lon };
+}
+
 export function countTrafficLightsFromSignals(
   coordinates: [number, number][],
   signals: TrafficLight[],
@@ -143,7 +179,11 @@ export function countTrafficLightsFromSignals(
     isNearRoute(signal.lat, signal.lon, coordinates, thresholdMeters)
   );
 
-  return { count: matched.length, lights: matched };
+  // Cluster nearby signals into intersections
+  const clusters = clusterSignals(matched, 35);
+  const centroids = clusters.map(clusterCentroid);
+
+  return { count: centroids.length, lights: centroids };
 }
 
 export async function countTrafficLights(
