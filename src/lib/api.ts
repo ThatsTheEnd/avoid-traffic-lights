@@ -135,7 +135,7 @@ export async function fetchTrafficSignalsInBoundingBox(bbox: BoundingBox): Promi
 /** Cluster nearby signals into intersections (within `clusterRadius` meters) */
 export function clusterSignals(
   signals: TrafficLight[],
-  clusterRadius = 35
+  clusterRadius = 50
 ): TrafficLight[][] {
   const visited = new Set<number>();
   const clusters: TrafficLight[][] = [];
