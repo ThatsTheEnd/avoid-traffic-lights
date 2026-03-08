@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import Sidebar, { RouteData } from "@/components/Sidebar";
 import MapView, { MapViewHandle } from "@/components/MapView";
-import { fetchRoutes, countTrafficLights } from "@/lib/api";
+import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeBoundingBoxes, fetchTrafficSignalsInBoundingBox } from "@/lib/api";
 
 const Index = () => {
   const [routes, setRoutes] = useState<RouteData[]>([]);
