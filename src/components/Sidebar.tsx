@@ -3,7 +3,7 @@ import AddressInput from "./AddressInput";
 import RouteCard from "./RouteCard";
 import type { NominatimResult } from "@/lib/api";
 import type { FeatureCollection } from "geojson";
-import { Loader2 } from "lucide-react";
+import { Loader2, Share2 } from "lucide-react";
 
 export interface RouteData {
   label: string;
@@ -28,6 +28,11 @@ interface SidebarProps {
   locationStartCoord?: { lat: number; lon: number } | null;
   onUseCurrentLocation?: () => void;
   locationLoading?: boolean;
+  onCopyLink?: () => void;
+  sharedStartName?: string | null;
+  sharedEndName?: string | null;
+  sharedStartCoord?: { lat: number; lon: number } | null;
+  sharedEndCoord?: { lat: number; lon: number } | null;
 }
 
 export default function Sidebar({
@@ -43,6 +48,11 @@ export default function Sidebar({
   locationStartCoord,
   onUseCurrentLocation,
   locationLoading,
+  onCopyLink,
+  sharedStartName,
+  sharedEndName,
+  sharedStartCoord,
+  sharedEndCoord,
 }: SidebarProps) {
   const [startText, setStartText] = useState("");
   const [endText, setEndText] = useState("");
@@ -56,6 +66,21 @@ export default function Sidebar({
       setStartCoord(locationStartCoord);
     }
   }, [locationStartText, locationStartCoord]);
+
+  // Accept shared route from URL
+  useEffect(() => {
+    if (sharedStartName && sharedStartCoord) {
+      setStartText(sharedStartName);
+      setStartCoord(sharedStartCoord);
+    }
+  }, [sharedStartName, sharedStartCoord]);
+
+  useEffect(() => {
+    if (sharedEndName && sharedEndCoord) {
+      setEndText(sharedEndName);
+      setEndCoord(sharedEndCoord);
+    }
+  }, [sharedEndName, sharedEndCoord]);
 
   const fewestIdx = routes.length
     ? routes.reduce((min, r, i) => (r.lightCount < routes[min].lightCount ? i : min), 0)
@@ -81,7 +106,7 @@ export default function Sidebar({
           <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
             🚲 GreenLight
           </h1>
-          <span className="text-[10px] text-muted-foreground font-mono">v0.1.13</span>
+          <span className="text-[10px] text-muted-foreground font-mono">v0.1.14</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Find the route with fewest traffic lights
@@ -145,7 +170,16 @@ export default function Sidebar({
       )}
 
       {routes.length > 0 && (
-        <div className="p-5 pt-0 mt-auto">
+        <div className="p-5 pt-0 mt-auto flex flex-col gap-2">
+          {onCopyLink && (
+            <button
+              onClick={onCopyLink}
+              className="w-full rounded-lg bg-primary/10 text-primary text-xs py-2 hover:bg-primary/20 transition-colors flex items-center justify-center gap-1.5 font-medium"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share Route Link
+            </button>
+          )}
           <button
             onClick={handleReset}
             className="w-full rounded-lg border border-border text-muted-foreground text-xs py-2 hover:bg-muted transition-colors"
