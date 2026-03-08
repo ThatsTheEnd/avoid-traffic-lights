@@ -31,6 +31,7 @@ interface SidebarProps {
   onUseCurrentLocation?: () => void;
   locationLoading?: boolean;
   onCopyLink?: () => void;
+  loadingSteps?: LoadingStep[];
   sharedStartName?: string | null;
   sharedEndName?: string | null;
   sharedStartCoord?: { lat: number; lon: number } | null;
