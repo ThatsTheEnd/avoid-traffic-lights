@@ -247,9 +247,9 @@ describe("countTrafficLightsFromSignals", () => {
       [8.335, 47.458],
       [8.32661, 47.46584],
     ];
-    // Only one traffic signal near this route — placed right on route segment
+    // Only one traffic signal near this route — placed exactly on a route vertex
     const signals: TrafficLight[] = [
-      { lat: 47.4510, lon: 8.3470 },  // directly on route mid-point
+      { lat: 47.445, lon: 8.355 },    // exactly at route point [8.355, 47.445]
       { lat: 47.500, lon: 8.500 },    // far away, not on route
       { lat: 47.430, lon: 8.380 },    // far away, not on route
     ];
