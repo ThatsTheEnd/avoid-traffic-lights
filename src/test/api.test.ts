@@ -247,11 +247,11 @@ describe("countTrafficLightsFromSignals", () => {
       [8.335, 47.458],
       [8.32661, 47.46584],
     ];
-    // Only one traffic signal near this route
+    // Only one traffic signal near this route — placed right on route segment
     const signals: TrafficLight[] = [
-      { lat: 47.453, lon: 8.340 },   // near route mid-point
-      { lat: 47.500, lon: 8.500 },   // far away, not on route
-      { lat: 47.430, lon: 8.380 },   // far away, not on route
+      { lat: 47.4510, lon: 8.3470 },  // directly on route mid-point
+      { lat: 47.500, lon: 8.500 },    // far away, not on route
+      { lat: 47.430, lon: 8.380 },    // far away, not on route
     ];
     const result = countTrafficLightsFromSignals(coords, signals, 25);
     expect(result.count).toBe(1);
