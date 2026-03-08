@@ -265,6 +265,7 @@ const Index = () => {
           onUseCurrentLocation={handleUseCurrentLocation}
           locationLoading={locatingFromSidebar}
           onCopyLink={routes.length > 0 ? handleCopyLink : undefined}
+          loadingSteps={loadingSteps}
           sharedStartName={sharedStartName}
           sharedEndName={sharedEndName}
           sharedStartCoord={sharedStartCoord}
