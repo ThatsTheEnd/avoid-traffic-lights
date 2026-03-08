@@ -169,6 +169,8 @@ export default function Sidebar({
               lightCount={r.lightCount}
               time={r.time}
               distance={r.distance}
+              ascend={r.ascend}
+              descend={r.descend}
               isFewest={i === fewestIdx}
               isActive={i === activeRouteIndex}
               onSelect={() => onSelectRoute(i)}

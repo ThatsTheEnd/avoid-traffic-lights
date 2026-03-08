@@ -7,6 +7,8 @@ const defaultProps = {
   lightCount: 5,
   time: 12.4,
   distance: 3.7,
+  ascend: 120,
+  descend: 85,
   isFewest: false,
   isActive: false,
   onSelect: vi.fn(),
