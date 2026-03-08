@@ -1,3 +1,5 @@
+import type { FeatureCollection, LineString } from "geojson";
+
 // Nominatim geocoding
 export interface NominatimResult {
   place_id: number;
