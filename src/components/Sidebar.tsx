@@ -124,9 +124,6 @@ export default function Sidebar({
         <p className="text-xs text-muted-foreground mt-1">
           Find the route with fewest traffic lights
         </p>
-        <a href="https://github.com/ThatsTheEnd/avoid-traffic-lights/issues" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-1 inline-block">
-          Found a bug? Report it →
-        </a>
       </div>
 
       <div className="p-5 flex flex-col gap-3">
