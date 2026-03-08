@@ -27,10 +27,11 @@ const Index = () => {
         );
         const allSignals = await fetchTrafficSignalsInBoundingBox(mergedBbox);
 
-        const withLights: RouteData[] = rawRoutes.map((r) => {
+        const baseLabels = ["Fastest", "Balanced", "Alternative"];
+        const withLightsRaw = rawRoutes.map((r, i) => {
           const { count, lights } = countTrafficLightsFromSignals(r.coordinates, allSignals);
           return {
-            label: r.label,
+            label: baseLabels[i],
             lightCount: count,
             time: r.time,
             distance: r.distance,
@@ -40,13 +41,19 @@ const Index = () => {
           };
         });
 
-        setRoutes(withLights);
-
-        // Auto-select fewest lights route
-        const fewestIdx = withLights.reduce(
-          (min, r, i) => (r.lightCount < withLights[min].lightCount ? i : min),
+        // Dynamically assign "Fewest Lights" label to the route with the lowest count
+        const fewestIdx = withLightsRaw.reduce(
+          (min, r, i) => (r.lightCount < withLightsRaw[min].lightCount ? i : min),
           0
         );
+        const withLights: RouteData[] = withLightsRaw.map((r, i) => ({
+          ...r,
+          label: i === fewestIdx ? "Fewest Lights" : r.label,
+        }));
+
+        setRoutes(withLights);
+
+        // Auto-select fewest lights route (already computed above)
         selectRoute(withLights, fewestIdx);
       } catch (e: any) {
         setError(e.message || "Something went wrong. Please try again.");
