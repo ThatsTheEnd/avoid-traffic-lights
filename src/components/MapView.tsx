@@ -15,6 +15,16 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const popupsRef = useRef<maplibregl.Popup[]>([]);
+  const styleLoadedRef = useRef(false);
+  const pendingOpsRef = useRef<(() => void)[]>([]);
+
+  const whenReady = (fn: () => void) => {
+    if (styleLoadedRef.current && mapRef.current) {
+      fn();
+    } else {
+      pendingOpsRef.current.push(fn);
+    }
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -37,6 +47,11 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
     mapRef.current = map;
+    map.on("load", () => {
+      styleLoadedRef.current = true;
+      pendingOpsRef.current.forEach((fn) => fn());
+      pendingOpsRef.current = [];
+    });
     return () => map.remove();
   }, []);
 
