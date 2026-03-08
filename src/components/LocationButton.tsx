@@ -35,7 +35,7 @@ export default function LocationButton({
 
   const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
     if (event.alpha !== null) {
-      const heading = (event as any).webkitCompassHeading ?? event.alpha;
+      const heading = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading ?? event.alpha;
       compassHeadingRef.current = heading;
     }
   }, []);
