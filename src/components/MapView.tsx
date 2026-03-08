@@ -3,7 +3,7 @@ import type { TrafficLight } from "@/lib/api";
 import type { FeatureCollection } from "geojson";
 
 export interface MapViewHandle {
-  showRoute: (geojson: GeoJSON.FeatureCollection, lights: TrafficLight[], highlight?: boolean) => void;
+  showRoute: (geojson: FeatureCollection, lights: TrafficLight[], highlight?: boolean) => void;
   clearAll: () => void;
   fitToRoute: (coordinates: [number, number][]) => void;
 }
