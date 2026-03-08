@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AddressInput from "./AddressInput";
 import RouteCard from "./RouteCard";
 import type { NominatimResult } from "@/lib/api";
@@ -24,6 +24,8 @@ interface SidebarProps {
   onSelectRoute: (index: number) => void;
   onHoverRoute: (index: number | null) => void;
   onReset: () => void;
+  locationStartText?: string | null;
+  locationStartCoord?: { lat: number; lon: number } | null;
 }
 
 export default function Sidebar({
@@ -35,11 +37,21 @@ export default function Sidebar({
   onSelectRoute,
   onHoverRoute,
   onReset,
+  locationStartText,
+  locationStartCoord,
 }: SidebarProps) {
   const [startText, setStartText] = useState("");
   const [endText, setEndText] = useState("");
   const [startCoord, setStartCoord] = useState<{ lat: number; lon: number } | null>(null);
   const [endCoord, setEndCoord] = useState<{ lat: number; lon: number } | null>(null);
+
+  // Accept location from GPS
+  useEffect(() => {
+    if (locationStartText && locationStartCoord && !startCoord) {
+      setStartText(locationStartText);
+      setStartCoord(locationStartCoord);
+    }
+  }, [locationStartText, locationStartCoord]);
 
   const fewestIdx = routes.length
     ? routes.reduce((min, r, i) => (r.lightCount < routes[min].lightCount ? i : min), 0)
@@ -65,7 +77,7 @@ export default function Sidebar({
           <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
             🚲 GreenLight
           </h1>
-          <span className="text-[10px] text-muted-foreground font-mono">v0.1.0.6</span>
+          <span className="text-[10px] text-muted-foreground font-mono">v0.1.0.7</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Find the route with fewest traffic lights
