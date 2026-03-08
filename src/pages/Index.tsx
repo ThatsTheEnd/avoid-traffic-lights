@@ -4,6 +4,8 @@ import MapView, { MapViewHandle } from "@/components/MapView";
 import LocationButton, { LocationState } from "@/components/LocationButton";
 import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeBoundingBoxes, fetchTrafficSignalsInBoundingBox } from "@/lib/api";
 import { reverseGeocode } from "@/lib/reverseGeocode";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Menu, X } from "lucide-react";
 
 const Index = () => {
   const [routes, setRoutes] = useState<RouteData[]>([]);
@@ -12,6 +14,8 @@ const Index = () => {
   const [activeRouteIndex, setActiveRouteIndex] = useState<number | null>(null);
   const [trackingActive, setTrackingActive] = useState(false);
   const [locatingFromSidebar, setLocatingFromSidebar] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
   const mapRef = useRef<MapViewHandle>(null);
   const lastLocationRef = useRef<{ lat: number; lon: number } | null>(null);
   const firstLocationRef = useRef(true);
@@ -19,7 +23,6 @@ const Index = () => {
   const [locationStartText, setLocationStartText] = useState<string | null>(null);
   const [locationStartCoord, setLocationStartCoord] = useState<{ lat: number; lon: number } | null>(null);
 
-  // Ref to the LocationButton's startTracking trigger
   const startTrackingRef = useRef<(() => void) | null>(null);
 
   const handleFindRoutes = useCallback(
@@ -51,13 +54,14 @@ const Index = () => {
 
         setRoutes(withLights);
         selectRoute(withLights, fewestIdx);
+        if (isMobile) setSidebarOpen(false); // Auto-close on mobile after finding routes
       } catch (e: any) {
         setError(e.message || "Something went wrong. Please try again.");
       } finally {
         setLoading(false);
       }
     },
-    []
+    [isMobile]
   );
 
   const selectRoute = (routeList: RouteData[], index: number) => {
@@ -69,7 +73,10 @@ const Index = () => {
     setActiveRouteIndex(index);
   };
 
-  const handleSelectRoute = (index: number) => selectRoute(routes, index);
+  const handleSelectRoute = (index: number) => {
+    selectRoute(routes, index);
+    if (isMobile) setSidebarOpen(false);
+  };
 
   const handleHoverRoute = (index: number | null) => {
     if (index === null || index === activeRouteIndex) return;
@@ -99,8 +106,6 @@ const Index = () => {
     }
 
     mapRef.current?.flyTo(lon, lat, 16);
-
-    // Always fill the start field when we get a location
     const displayName = await reverseGeocode(lat, lon);
     const name = displayName || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
     setLocationStartText(name);
@@ -120,35 +125,61 @@ const Index = () => {
     firstLocationRef.current = true;
   }, []);
 
-  // Called from sidebar "Use current location" dropdown
   const handleUseCurrentLocation = useCallback(() => {
     if (trackingActive && lastLocationRef.current) {
-      // Already tracking — just use last known position
       const { lat, lon } = lastLocationRef.current;
       handleLocationStart(lat, lon);
     } else {
-      // Start tracking via LocationButton
       setLocatingFromSidebar(true);
       startTrackingRef.current?.();
     }
   }, [trackingActive, handleLocationStart]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
-      <Sidebar
-        onFindRoutes={handleFindRoutes}
-        routes={routes}
-        loading={loading}
-        error={error}
-        activeRouteIndex={activeRouteIndex}
-        onSelectRoute={handleSelectRoute}
-        onHoverRoute={handleHoverRoute}
-        onReset={handleReset}
-        locationStartText={locationStartText}
-        locationStartCoord={locationStartCoord}
-        onUseCurrentLocation={handleUseCurrentLocation}
-        locationLoading={locatingFromSidebar}
-      />
+    <div className="flex h-screen w-screen overflow-hidden relative">
+      {/* Mobile menu button */}
+      {isMobile && (
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute top-4 left-4 z-30 w-12 h-12 rounded-full bg-card shadow-lg border border-border flex items-center justify-center"
+          aria-label={sidebarOpen ? "Close menu" : "Open menu"}
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      )}
+
+      {/* Sidebar - slides in on mobile */}
+      <div
+        className={`
+          ${isMobile ? "absolute inset-y-0 left-0 z-20 transform transition-transform duration-300 ease-in-out" : ""}
+          ${isMobile && !sidebarOpen ? "-translate-x-full" : "translate-x-0"}
+        `}
+      >
+        <Sidebar
+          onFindRoutes={handleFindRoutes}
+          routes={routes}
+          loading={loading}
+          error={error}
+          activeRouteIndex={activeRouteIndex}
+          onSelectRoute={handleSelectRoute}
+          onHoverRoute={handleHoverRoute}
+          onReset={handleReset}
+          locationStartText={locationStartText}
+          locationStartCoord={locationStartCoord}
+          onUseCurrentLocation={handleUseCurrentLocation}
+          locationLoading={locatingFromSidebar}
+        />
+      </div>
+
+      {/* Overlay when sidebar is open on mobile */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="absolute inset-0 bg-black/40 z-10"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Map */}
       <div className="flex-1 h-full relative">
         <MapView ref={mapRef} />
         <LocationButton
@@ -159,6 +190,21 @@ const Index = () => {
           setTrackingActive={setTrackingActive}
           startTrackingRef={startTrackingRef}
         />
+
+        {/* Mobile route indicator pill */}
+        {isMobile && routes.length > 0 && activeRouteIndex !== null && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="absolute top-4 left-20 z-10 bg-card shadow-lg rounded-full px-4 py-2 flex items-center gap-2 border border-border"
+          >
+            <span className="text-xs font-medium text-foreground">
+              {routes[activeRouteIndex].label}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              🚦 {routes[activeRouteIndex].lightCount}
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );
