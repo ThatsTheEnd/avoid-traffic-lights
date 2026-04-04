@@ -4,6 +4,7 @@ import Sidebar, { RouteData } from "@/components/Sidebar";
 import MapView, { MapViewHandle } from "@/components/MapView";
 import LocationButton, { LocationState } from "@/components/LocationButton";
 import { fetchRoutes, countTrafficLightsFromSignals, getRouteBoundingBox, mergeBoundingBoxes, fetchTrafficSignalsInBoundingBox } from "@/lib/api";
+import { exportRouteAsGpx } from "@/lib/exportGpx";
 import type { LoadingStep } from "@/components/LoadingProgress";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -161,6 +162,13 @@ const Index = () => {
     });
   }, []);
 
+  const handleExportRoute = useCallback(() => {
+    if (activeRouteIndex === null || !routes[activeRouteIndex]) return;
+    exportRouteAsGpx(routes[activeRouteIndex]).catch(() => {
+      toast.error("Failed to export route");
+    });
+  }, [activeRouteIndex, routes]);
+
   // Auto-load route from URL params
   useEffect(() => {
     if (autoLoadedRef.current) return;
@@ -268,6 +276,7 @@ const Index = () => {
           onUseCurrentLocation={handleUseCurrentLocation}
           locationLoading={locatingFromSidebar}
           onCopyLink={routes.length > 0 ? handleCopyLink : undefined}
+          onExportRoute={activeRouteIndex !== null ? handleExportRoute : undefined}
           loadingSteps={loadingSteps}
           wakeLockSupported={wakeLock.supported}
           wakeLockActive={wakeLock.active}
