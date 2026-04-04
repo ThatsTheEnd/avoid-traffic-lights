@@ -6,7 +6,7 @@ import LoadingProgress from "./LoadingProgress";
 import type { LoadingStep } from "./LoadingProgress";
 import type { NominatimResult } from "@/lib/api";
 import type { FeatureCollection } from "geojson";
-import { Loader2, Share2, Sun } from "lucide-react";
+import { Download, Loader2, Share2, Sun } from "lucide-react";
 
 export interface RouteData {
   label: string;
@@ -34,6 +34,7 @@ interface SidebarProps {
   onUseCurrentLocation?: () => void;
   locationLoading?: boolean;
   onCopyLink?: () => void;
+  onExportRoute?: () => void;
   loadingSteps?: LoadingStep[];
   wakeLockSupported?: boolean;
   wakeLockActive?: boolean;
@@ -58,6 +59,7 @@ export default function Sidebar({
   onUseCurrentLocation,
   locationLoading,
   onCopyLink,
+  onExportRoute,
   loadingSteps,
   wakeLockSupported,
   wakeLockActive,
@@ -203,6 +205,15 @@ export default function Sidebar({
             >
               <Share2 className="w-3.5 h-3.5" />
               Share Route Link
+            </button>
+          )}
+          {onExportRoute && (
+            <button
+              onClick={onExportRoute}
+              className="w-full rounded-lg bg-primary/10 text-primary text-xs py-2 hover:bg-primary/20 transition-colors flex items-center justify-center gap-1.5 font-medium"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export as GPX
             </button>
           )}
           <button
