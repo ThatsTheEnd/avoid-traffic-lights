@@ -119,6 +119,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
 
   useEffect(() => {
     let disposed = false;
+    let resizeObserver: ResizeObserver | null = null;
 
     const initMap = async () => {
       if (!containerRef.current) return;
@@ -142,13 +143,26 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
       mapRef.current = map;
       map.on("load", () => {
         styleLoadedRef.current = true;
+        map.resize();
         pendingOpsRef.current.forEach((fn) => fn());
         pendingOpsRef.current = [];
       });
+
+      // Keep the canvas in sync whenever the container is resized (e.g. iOS
+      // Safari layout shift when the browser chrome appears/disappears, or
+      // the isMobile state updating after first render).
+      resizeObserver = new ResizeObserver(() => {
+        map.resize();
+      });
+      resizeObserver.observe(containerRef.current);
     };
 
     initMap();
-    return () => { disposed = true; mapRef.current?.remove(); };
+    return () => {
+      disposed = true;
+      resizeObserver?.disconnect();
+      mapRef.current?.remove();
+    };
   }, []);
 
   const clearAll = () => {
