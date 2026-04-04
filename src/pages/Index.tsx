@@ -235,7 +235,7 @@ const Index = () => {
   }, [trackingActive, handleLocationStart]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden relative">
+    <div className="flex h-dvh w-screen overflow-hidden relative">
       {/* Mobile menu button - always on top */}
       {isMobile && (
         <button

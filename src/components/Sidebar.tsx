@@ -115,7 +115,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="w-80 max-w-[85vw] shrink-0 h-screen overflow-y-auto bg-card panel-shadow flex flex-col z-10">
+    <aside className="w-80 max-w-[85vw] shrink-0 h-dvh overflow-y-auto bg-card panel-shadow flex flex-col z-10">
       <div className="p-5 border-b border-border">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground flex items-center gap-1.5">
