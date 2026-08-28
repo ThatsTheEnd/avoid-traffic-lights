@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.claude/metrics/boundary-events.jsonl
+.gitignore
+.claude/metrics/boundary-events.jsonl.lock
