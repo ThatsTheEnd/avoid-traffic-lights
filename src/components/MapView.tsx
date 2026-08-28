@@ -1,4 +1,20 @@
-import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import {
+  LngLatBounds,
+  MapLibreMap,
+  Marker,
+  NavigationControl,
+  Popup,
+  setWorkerUrl,
+  type GeoJSONSource,
+  type StyleSpecification,
+} from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+// MapLibre v6 ships its web worker as a separate ES module and resolves it from
+// `import.meta.url` at runtime, which a bundler cannot see - so the request 404s
+// and every GeoJSON source silently stays empty (basemap renders, routes do not).
+// Let Vite emit the worker as a real asset and point MapLibre at it explicitly.
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { TrafficLight } from "@/lib/api";
 import type { FeatureCollection } from "geojson";
 import type { LocationState } from "./LocationButton";
@@ -12,41 +28,16 @@ export interface MapViewHandle {
   removeUserLocation: () => void;
 }
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    maplibregl?: any;
-  }
-}
+setWorkerUrl(maplibreWorkerUrl);
 
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-const MAPLIBRE_SCRIPT_ID = "maplibre-gl-cdn-script";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const loadMapLibre = async (): Promise<any> => {
-  if (window.maplibregl) return window.maplibregl;
-
-  const existing = document.getElementById(MAPLIBRE_SCRIPT_ID) as HTMLScriptElement | null;
-  if (existing) {
-    await new Promise<void>((resolve, reject) => {
-      if (window.maplibregl) { resolve(); return; }
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("Failed to load MapLibre script")), { once: true });
-    });
-    return window.maplibregl;
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.id = MAPLIBRE_SCRIPT_ID;
-    script.src = "https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js";
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load MapLibre script"));
-    document.head.appendChild(script);
-  });
-
-  return window.maplibregl;
+const MAP_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    osm: { type: "raster", tiles: [TILE_URL], tileSize: 256, attribution: "© OpenStreetMap contributors" },
+  },
+  layers: [{ id: "osm", type: "raster", source: "osm" }],
 };
 
 /** Create the blue dot + direction cone SVG element */
@@ -94,18 +85,15 @@ function metersToPixels(meters: number, lat: number, zoom: number): number {
 
 const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mapRef = useRef<any | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const markersRef = useRef<any[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const popupsRef = useRef<any[]>([]);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markersRef = useRef<Marker[]>([]);
+  const popupsRef = useRef<Popup[]>([]);
   const styleLoadedRef = useRef(false);
+  const [loadError, setLoadError] = useState(false);
   const pendingOpsRef = useRef<(() => void)[]>([]);
 
   // User location refs
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const userMarkerRef = useRef<any | null>(null);
+  const userMarkerRef = useRef<Marker | null>(null);
   const userMarkerElRef = useRef<HTMLDivElement | null>(null);
   const accuracySourceAdded = useRef(false);
 
@@ -118,34 +106,31 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   };
 
   useEffect(() => {
-    let disposed = false;
+    if (!containerRef.current) return;
     let resizeObserver: ResizeObserver | null = null;
 
-    const initMap = async () => {
-      if (!containerRef.current) return;
-      const maplibregl = await loadMapLibre();
-      if (!maplibregl || disposed || !containerRef.current) return;
-
-      const map = new maplibregl.Map({
+    try {
+      const map = new MapLibreMap({
         container: containerRef.current,
-        style: {
-          version: 8,
-          sources: {
-            osm: { type: "raster", tiles: [TILE_URL], tileSize: 256, attribution: "© OpenStreetMap contributors" },
-          },
-          layers: [{ id: "osm", type: "raster", source: "osm" }],
-        },
+        style: MAP_STYLE,
         center: [13.405, 52.52],
         zoom: 12,
       });
 
-      map.addControl(new maplibregl.NavigationControl(), "top-right");
+      map.addControl(new NavigationControl(), "top-right");
       mapRef.current = map;
+
       map.on("load", () => {
         styleLoadedRef.current = true;
         map.resize();
         pendingOpsRef.current.forEach((fn) => fn());
         pendingOpsRef.current = [];
+      });
+
+      // Tile/style failures arrive as events rather than throws, so surface
+      // them instead of leaving an unexplained blank canvas.
+      map.on("error", (e) => {
+        console.error("MapLibre error", e.error ?? e);
       });
 
       // Keep the canvas in sync whenever the container is resized (e.g. iOS
@@ -155,13 +140,19 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
         map.resize();
       });
       resizeObserver.observe(containerRef.current);
-    };
+    } catch (err) {
+      // e.g. WebGL2 unavailable (blocked/older browser) - MapLibre v6 throws
+      // from the constructor in that case.
+      console.error("Failed to initialise the map", err);
+      setLoadError(true);
+    }
 
-    initMap();
     return () => {
-      disposed = true;
       resizeObserver?.disconnect();
       mapRef.current?.remove();
+      mapRef.current = null;
+      styleLoadedRef.current = false;
+      pendingOpsRef.current = [];
     };
   }, []);
 
@@ -183,8 +174,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const showRoute = (geojson: FeatureCollection, lights: TrafficLight[], highlight = false) => {
     whenReady(() => {
       const map = mapRef.current;
-      const maplibregl = window.maplibregl;
-      if (!map || !maplibregl) return;
+      if (!map) return;
 
       const sourceId = highlight ? "route-line-highlight" : "route-line";
 
@@ -221,12 +211,12 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
           el.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)";
           el.style.cursor = "pointer";
 
-          const popup = new maplibregl.Popup({ offset: 10, closeButton: false }).setHTML(
+          const popup = new Popup({ offset: 10, closeButton: false }).setHTML(
             "<span style='font-size:12px'>🚦 Traffic light</span>"
           );
           popupsRef.current.push(popup);
 
-          const marker = new maplibregl.Marker({ element: el })
+          const marker = new Marker({ element: el })
             .setLngLat([light.lon, light.lat])
             .setPopup(popup)
             .addTo(map);
@@ -244,9 +234,8 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
     if (coordinates.length === 0) return;
     whenReady(() => {
       const map = mapRef.current;
-      const maplibregl = window.maplibregl;
-      if (!map || !maplibregl) return;
-      const bounds = new maplibregl.LngLatBounds();
+      if (!map) return;
+      const bounds = new LngLatBounds();
       coordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
       map.fitBounds(bounds, { padding: 60, duration: 800 });
     });
@@ -261,14 +250,13 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   const updateUserLocation = (state: LocationState) => {
     whenReady(() => {
       const map = mapRef.current;
-      const maplibregl = window.maplibregl;
-      if (!map || !maplibregl) return;
+      if (!map) return;
 
       // Create or update marker
       if (!userMarkerRef.current) {
         const el = createUserMarkerElement();
         userMarkerElRef.current = el;
-        userMarkerRef.current = new maplibregl.Marker({ element: el, anchor: "center" })
+        userMarkerRef.current = new Marker({ element: el, anchor: "center" })
           .setLngLat([state.lon, state.lat])
           .addTo(map);
       } else {
@@ -305,7 +293,7 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
         });
         accuracySourceAdded.current = true;
       } else {
-        map.getSource("user-accuracy")?.setData(accuracyGeoJSON);
+        (map.getSource("user-accuracy") as GeoJSONSource | undefined)?.setData(accuracyGeoJSON);
       }
     });
   };
@@ -330,6 +318,20 @@ const MapView = forwardRef<MapViewHandle>((_, ref) => {
   return (
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
+      {loadError && (
+        <div
+          role="alert"
+          className="absolute inset-0 flex items-center justify-center p-6 bg-background/95"
+        >
+          <div className="max-w-sm text-center space-y-2">
+            <p className="font-semibold text-foreground">Map could not be loaded</p>
+            <p className="text-sm text-muted-foreground">
+              Your browser may not support WebGL2, or it is disabled. Routing still works, but the
+              map cannot be displayed.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="absolute bottom-10 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md text-xs flex gap-3 items-center border border-border">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-4 h-1 rounded-full bg-primary" />

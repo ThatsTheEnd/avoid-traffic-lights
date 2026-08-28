@@ -17,6 +17,11 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "es2022",
   },
+  // MapLibre's worker is an ES module; emit workers in the same format so it
+  // loads via `new Worker(url, { type: "module" })`.
+  worker: {
+    format: "es",
+  },
   optimizeDeps: {
     esbuildOptions: {
       target: "es2022",
